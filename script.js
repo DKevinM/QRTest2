@@ -27,18 +27,9 @@ function initializeMap(data) {
     });
 }
 
-// Generate QR code
-function generateQRCode() {
-    const qr = qrcode(0, 'L');
-    const url = window.location.href;
-    qr.addData(url);
-    qr.make();
-    document.getElementById('qr-code').innerHTML = qr.createImgTag();
-}
 
 // Main function
 (async function() {
     const data = await getAQHIData();
     initializeMap(data);
-    generateQRCode();
 })();
