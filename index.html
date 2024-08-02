@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AQHI Map with QR Code</title>
+    <title>AQHI Map</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
     <style>
         #map {
@@ -17,10 +17,7 @@
 <body>
     <h1>AQHI Map for Edmonton McCauley</h1>
     <div id="map"></div>
-    <h2>Scan this QR Code to access this page:</h2>
-    <canvas id="qr-code"></canvas>
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/qrcode-generator/qrcode.js"></script>
     <script>
         // Function to fetch AQHI data
         async function getAQHIData() {
@@ -49,15 +46,6 @@
             });
         }
 
-        // Generate QR code
-        function generateQRCode() {
-            const qr = qrcode(0, 'L');
-            const url = window.location.href;
-            qr.addData(url);
-            qr.make();
-            document.getElementById('qr-code').innerHTML = qr.createImgTag();
-        }
-
         // Main function
         (async function() {
             const data = await getAQHIData();
@@ -68,7 +56,6 @@
                                     }));
 
             initializeMap(filteredData);
-            generateQRCode();
         })();
     </script>
 </body>
