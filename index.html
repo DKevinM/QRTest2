@@ -9,8 +9,13 @@
         #map {
             height: 600px;
         }
-        #qr-code {
-            margin-top: 20px;
+        .aqhi-label {
+            color: black;
+            font-size: 14px;
+            font-weight: bold;
+            background: rgba(255, 255, 255, 0.5);
+            padding: 2px;
+            border-radius: 3px;
         }
     </style>
 </head>
@@ -36,6 +41,8 @@
 
             data.forEach(station => {
                 const color = station.Aqhi <= 3 ? 'green' : station.Aqhi <= 6 ? 'orange' : 'red';
+                
+                // Create a circle for the AQHI value
                 L.circle([53.549509, -113.48593], {
                     color: color,
                     fillColor: color,
@@ -43,6 +50,16 @@
                     radius: station.Aqhi * 500
                 }).addTo(map)
                 .bindPopup(`<b>Site:</b> Edmonton McCauley<br><b>AQHI:</b> ${station.Aqhi}<br><b>Date:</b> ${station.ReadingDate}`);
+
+                // Add a label in the middle of the circle
+                const icon = L.divIcon({
+                    className: 'aqhi-label',
+                    html: station.Aqhi,
+                    iconSize: [30, 30],
+                    iconAnchor: [15, 15]
+                });
+
+                L.marker([53.549509, -113.48593], {icon: icon}).addTo(map);
             });
         }
 
