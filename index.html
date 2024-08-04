@@ -88,12 +88,10 @@
         }
 
         // Fetch and process PurpleAir data
-        async function fetchPurpleAirData() {
+        async function fetchPurpleAirData(lat, lng) {
             const API_KEY = 'ED3E067C-0904-11ED-8561-42010A800005';
-            const targetLat = 53.535645;
-            const targetLng = -113.47194;
             const radius = 5000; // 5 km radius
-            const purpleAirUrl = `https://api.purpleair.com/v1/sensors?location_type=0&radius=${radius}&fields=last_seen,latitude,longitude,humidity,pm2.5_60minute,pm2.5_10minute&lat=${targetLat}&lon=${targetLng}`;
+            const purpleAirUrl = `https://api.purpleair.com/v1/sensors?location_type=0&radius=${radius}&fields=last_seen,latitude,longitude,humidity,pm2.5_60minute,pm2.5_10minute&lat=${lat}&lon=${lng}`;
 
             try {
                 const response = await fetch(purpleAirUrl, {
@@ -108,7 +106,7 @@
 
                 data.data.forEach(sensorData => {
                     const [sensorId, last_seen, latitude, longitude, humidity, pm2_5_60minute, pm2_5_10minute] = sensorData;
-                    const distance = getDistance(targetLat, targetLng, latitude, longitude);
+                    const distance = getDistance(lat, lng, latitude, longitude);
 
                     if (distance < minDistance) {
                         minDistance = distance;
@@ -132,9 +130,16 @@
             }
         }
 
+        // Add click event listener to the map
+        map.on('click', function(e) {
+            const { lat, lng } = e.latlng;
+            fetchPurpleAirData(lat, lng);
+        });
+
         window.addEventListener('message', (event) => {
             if (event.data === 'ready') {
-                fetchPurpleAirData();
+                // Initial data fetch for the map center
+                fetchPurpleAirData(map.getCenter().lat, map.getCenter().lng);
             }
         });
 
