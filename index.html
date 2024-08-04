@@ -29,6 +29,9 @@
             attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         }).addTo(map);
 
+        // Track existing markers
+        let existingMarkers = [];
+
         // Function to adjust PM2.5 values based on humidity
         function adjustPm25(pm25, humidity) {
             let adjustedPm25 = pm25;
@@ -45,7 +48,7 @@
         // Add PurpleAir sensor to the map
         function addPurpleAirSensor(lat, lng, pm25, name, date) {
             const color = pm25 <= 30 ? 'blue' : pm25 <= 60 ? 'orange' : pm25 <= 100 ? 'red' : 'brown';
-            L.circle([lat, lng], {
+            const circle = L.circle([lat, lng], {
                 color: color,
                 fillColor: color,
                 fillOpacity: 0.2,
@@ -60,7 +63,12 @@
                 iconAnchor: [15, 15]
             });
 
-            L.marker([lat, lng], {icon: icon}).addTo(map);
+            const marker = L.marker([lat, lng], {icon: icon}).addTo(map);
+
+            // Track the marker
+            existingMarkers.push(marker);
+
+            return marker;
         }
 
         // Function to get the distance between two coordinates
@@ -126,7 +134,19 @@
         // Add click event listener to the map
         map.on('click', function(e) {
             const { lat, lng } = e.latlng;
-            fetchPurpleAirData(lat, lng);
+
+            // Check if click is near an existing marker
+            let isNearExistingMarker = false;
+            existingMarkers.forEach(marker => {
+                const markerLatLng = marker.getLatLng();
+                if (getDistance(lat, lng, markerLatLng.lat, markerLatLng.lng) < 50) { // 50 meters threshold
+                    isNearExistingMarker = true;
+                }
+            });
+
+            if (!isNearExistingMarker) {
+                fetchPurpleAirData(lat, lng);
+            }
         });
 
         window.addEventListener('message', (event) => {
