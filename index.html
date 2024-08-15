@@ -10,12 +10,6 @@
             height: 800px;
             width: 100%;
         }
-        .purpleair-label {
-            font-size: 12px; /* Smaller font size for PurpleAir */
-        }
-        .nowrap {
-            white-space: nowrap;
-        }
     </style>
 </head>
 <body>
@@ -74,10 +68,25 @@
             return existingMarkers.some(marker => getDistance(lat, lng, marker.getLatLng().lat, marker.getLatLng().lng) < threshold);
         }
 
-        // Function to add a PurpleAir sensor marker to the map
+        // Function to add a PurpleAir sensor marker to the map with color coding
         function addPurpleAirSensor(lat, lng, pm25, sensorName, lastSeen) {
-            const marker = L.marker([lat, lng]).addTo(map)
-                .bindPopup(`<strong>${sensorName}</strong><br>PM2.5: ${pm25} µg/m³<br>Last Seen: ${lastSeen}`);
+            // Determine the color based on PM2.5 value
+            const color = pm25 == null || pm25 === '' || isNaN(Number(pm25)) ? 'gray' :
+                          pm25 <= 30 ? 'blue' :
+                          pm25 <= 60 ? 'orange' :
+                          pm25 <= 100 ? 'red' : 'brown';
+
+            // Create a circle marker
+            const marker = L.circleMarker([lat, lng], {
+                radius: 8, // Size of the circle
+                fillColor: color,
+                color: color,
+                weight: 1,
+                opacity: 1,
+                fillOpacity: 0.8
+            }).addTo(map)
+              .bindPopup(`<strong>${sensorName}</strong><br>PM2.5: ${pm25} µg/m³<br>Last Seen: ${lastSeen}`);
+            
             existingMarkers.push(marker);
         }
 
@@ -118,7 +127,7 @@
                         adjustedPm25_60minute = adjustPm25(pm2_5_60minute, humidity).toFixed(1);
                     }
 
-                    // Add the sensor marker to the map
+                    // Add the sensor marker to the map with color coding
                     addPurpleAirSensor(latitude, longitude, adjustedPm25_60minute, `Sensor ${sensorId}`, adjustedTimestamp.toLocaleString());
                 } else {
                     console.error('No sensors found within the specified radius.');
