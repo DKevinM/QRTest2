@@ -29,6 +29,12 @@
             attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         }).addTo(map);
 
+        function isDataOlderThanTwoHours(timestamp) {
+            const currentTime = new Date();
+            const twoHoursAgo = currentTime.getTime() - (2 * 60 * 60 * 1000);
+            return timestamp < twoHoursAgo;
+        }
+        
         // Track existing markers
         let existingMarkers = [];
 
@@ -45,31 +51,49 @@
             return adjustedPm25;
         }
 
-        // Add PurpleAir sensor to the map
-        function addPurpleAirSensor(lat, lng, pm25, name, date) {
-            const color = pm25 <= 30 ? 'blue' : pm25 <= 60 ? 'orange' : pm25 <= 100 ? 'red' : 'brown';
-            const circle = L.circle([lat, lng], {
-                color: color,
-                fillColor: color,
-                fillOpacity: 0.2,
-                radius: 250
-            }).addTo(map)
-            .bindPopup(`<b>Site:</b> ${name}<br><b>PM2.5 (past 1hr):</b> <span class="nowrap">${pm25}&nbsp;µg/m³</span><br><b>Date:</b> ${date}`);
 
-            const icon = L.divIcon({
-                className: 'aqhi-label purpleair-label',
-                html: `<span class="nowrap">${pm25}&nbsp;µg/m³</span>`,
-                iconSize: [35, 35],
-                iconAnchor: [15, 15]
-            });
-
-            const marker = L.marker([lat, lng], {icon: icon}).addTo(map);
-
-            // Track the marker
-            existingMarkers.push(marker);
-
-            return marker;
+            try {
+                const response = await fetch(purpleAirUrl, {
+                    headers: {
+                        'X-API-Key': API_KEY
+                    }
+                });
+                const data = await response.json();
+                data.data.forEach((sensorData, index) => {
+                    const [sensorId, last_seen, humidity, pm2_5_60minute, pm2_5_10minute] = sensorData;
+                    const adjustedTimestamp = new Date(last_seen * 1000);
+        
+                    let adjustedPm25_60minute = "N/A";
+                    let adjustedPm25_10minute = "N/A";
+        
+                    if (!isDataOlderThanTwoHours(adjustedTimestamp.getTime())) {
+                        adjustedPm25_60minute = adjustPm25(pm2_5_60minute, humidity).toFixed(0);
+                        adjustedPm25_10minute = adjustPm25(pm2_5_10minute, humidity).toFixed(0);
+                    }
+        
+                    const sensorName = sensorNames[index];
+        
+                    const purpleAirDataDiv = document.getElementById(`purpleAirData${index + 1}`);
+                    purpleAirDataDiv.innerHTML = `
+                        <p>${sensorName} at ${isNaN(adjustedTimestamp.getTime()) ? 'N/A' : adjustedTimestamp.toLocaleString()}</p>
+                        <p>PM2.5 (past 1hr): ${adjustedPm25_60minute} µg/m³</p>
+                        <p>PM2.5 (past 10min): ${adjustedPm25_10minute} µg/m³</p>
+                    `;
+        
+                    sendToMap('purpleair', {
+                        id: sensorId,
+                        name: sensorName,
+                        lastSeen: adjustedTimestamp.toLocaleString(),
+                        pm25_60: adjustedPm25_60minute,
+                        pm25_10: adjustedPm25_10minute
+                    });
+                });
+            } catch (error) {
+                console.error('Error fetching PurpleAir data:', error);
+            }
         }
+        
+        
 
         // Function to get the distance between two coordinates
         function getDistance(lat1, lon1, lat2, lon2) {
