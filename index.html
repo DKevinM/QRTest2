@@ -29,14 +29,32 @@
             attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         }).addTo(map);
 
+        // Track existing markers
+        let existingMarkers = [];
+
+        // Function to check if the data is older than two hours
         function isDataOlderThanTwoHours(timestamp) {
             const currentTime = new Date();
             const twoHoursAgo = currentTime.getTime() - (2 * 60 * 60 * 1000);
             return timestamp < twoHoursAgo;
         }
-        
-        // Track existing markers
-        let existingMarkers = [];
+
+        // Function to get the distance between two coordinates
+        function getDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371e3; // Earth radius in meters
+            const φ1 = lat1 * Math.PI/180;
+            const φ2 = lat2 * Math.PI/180;
+            const Δφ = (lat2 - lat1) * Math.PI/180;
+            const Δλ = (lon1 - lon2) * Math.PI/180;
+
+            const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
+                      Math.cos(φ1) * Math.cos(φ2) *
+                      Math.sin(Δλ/2) * Math.sin(Δλ/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+
+            const d = R * c; // in meters
+            return d;
+        }
 
         // Function to adjust PM2.5 values based on humidity
         function adjustPm25(pm25, humidity) {
@@ -51,65 +69,16 @@
             return adjustedPm25;
         }
 
-
-            try {
-                const response = await fetch(purpleAirUrl, {
-                    headers: {
-                        'X-API-Key': API_KEY
-                    }
-                });
-                const data = await response.json();
-                data.data.forEach((sensorData, index) => {
-                    const [sensorId, last_seen, humidity, pm2_5_60minute, pm2_5_10minute] = sensorData;
-                    const adjustedTimestamp = new Date(last_seen * 1000);
-        
-                    let adjustedPm25_60minute = "N/A";
-                    let adjustedPm25_10minute = "N/A";
-        
-                    if (!isDataOlderThanTwoHours(adjustedTimestamp.getTime())) {
-                        adjustedPm25_60minute = adjustPm25(pm2_5_60minute, humidity).toFixed(0);
-                        adjustedPm25_10minute = adjustPm25(pm2_5_10minute, humidity).toFixed(0);
-                    }
-        
-                    const sensorName = sensorNames[index];
-        
-                    const purpleAirDataDiv = document.getElementById(`purpleAirData${index + 1}`);
-                    purpleAirDataDiv.innerHTML = `
-                        <p>${sensorName} at ${isNaN(adjustedTimestamp.getTime()) ? 'N/A' : adjustedTimestamp.toLocaleString()}</p>
-                        <p>PM2.5 (past 1hr): ${adjustedPm25_60minute} µg/m³</p>
-                        <p>PM2.5 (past 10min): ${adjustedPm25_10minute} µg/m³</p>
-                    `;
-        
-                    sendToMap('purpleair', {
-                        id: sensorId,
-                        name: sensorName,
-                        lastSeen: adjustedTimestamp.toLocaleString(),
-                        pm25_60: adjustedPm25_60minute,
-                        pm25_10: adjustedPm25_10minute
-                    });
-                });
-            } catch (error) {
-                console.error('Error fetching PurpleAir data:', error);
-            }
+        // Function to check if a click is near an existing marker
+        function isNearExistingMarker(lat, lng, threshold = 50) {
+            return existingMarkers.some(marker => getDistance(lat, lng, marker.getLatLng().lat, marker.getLatLng().lng) < threshold);
         }
-        
-        
 
-        // Function to get the distance between two coordinates
-        function getDistance(lat1, lon1, lat2, lon2) {
-            const R = 6371e3; // Earth radius in meters
-            const φ1 = lat1 * Math.PI/180; // φ, λ in radians
-            const φ2 = lat2 * Math.PI/180;
-            const Δφ = (lat2-lat1) * Math.PI/180;
-            const Δλ = (lon2-lon1) * Math.PI/180;
-
-            const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
-                      Math.cos(φ1) * Math.cos(φ2) *
-                      Math.sin(Δλ/2) * Math.sin(Δλ/2);
-            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-
-            const d = R * c; // in meters
-            return d;
+        // Function to add a PurpleAir sensor marker to the map
+        function addPurpleAirSensor(lat, lng, pm25, sensorName, lastSeen) {
+            const marker = L.marker([lat, lng]).addTo(map)
+                .bindPopup(`<strong>${sensorName}</strong><br>PM2.5: ${pm25} µg/m³<br>Last Seen: ${lastSeen}`);
+            existingMarkers.push(marker);
         }
 
         // Fetch and process PurpleAir data
@@ -135,18 +104,22 @@
 
                     if (distance < minDistance) {
                         minDistance = distance;
-                        closestSensor = { sensorId, last_seen, latitude, longitude, humidity, pm2_5_60minute, pm2_5_10minute };
+                        closestSensor = { sensorId, last_seen, latitude, longitude, humidity, pm2_5_60minute };
                     }
                 });
 
                 if (closestSensor) {
                     const { sensorId, last_seen, latitude, longitude, humidity, pm2_5_60minute } = closestSensor;
-                    const adjustedPm25_60minute = adjustPm25(pm2_5_60minute, humidity);
-
-                    // Adjust the timestamp to the local timezone
                     const adjustedTimestamp = new Date(last_seen * 1000);
 
-                    addPurpleAirSensor(latitude, longitude, adjustedPm25_60minute.toFixed(1), `Sensor ${sensorId}`, adjustedTimestamp.toLocaleString());
+                    // Check if the data is older than two hours and decide if it should show "N/A"
+                    let adjustedPm25_60minute = "N/A";
+                    if (!isDataOlderThanTwoHours(adjustedTimestamp.getTime())) {
+                        adjustedPm25_60minute = adjustPm25(pm2_5_60minute, humidity).toFixed(1);
+                    }
+
+                    // Add the sensor marker to the map
+                    addPurpleAirSensor(latitude, longitude, adjustedPm25_60minute, `Sensor ${sensorId}`, adjustedTimestamp.toLocaleString());
                 } else {
                     console.error('No sensors found within the specified radius.');
                 }
@@ -160,15 +133,7 @@
             const { lat, lng } = e.latlng;
 
             // Check if click is near an existing marker
-            let isNearExistingMarker = false;
-            existingMarkers.forEach(marker => {
-                const markerLatLng = marker.getLatLng();
-                if (getDistance(lat, lng, markerLatLng.lat, markerLatLng.lng) < 50) { // 50 meters threshold
-                    isNearExistingMarker = true;
-                }
-            });
-
-            if (!isNearExistingMarker) {
+            if (!isNearExistingMarker(lat, lng)) {
                 fetchPurpleAirData(lat, lng);
             }
         });
