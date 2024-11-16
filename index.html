@@ -17,121 +17,78 @@
 
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
     <script>
-        // Initialize the map
         const map = L.map('map').setView([53.535645, -113.47194], 13);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         }).addTo(map);
 
-        // Track existing markers
         let existingMarkers = [];
 
-        // Function to check if the data is older than two hours
         function isDataOlderThanTwoHours(timestamp) {
             const currentTime = new Date();
             const twoHoursAgo = currentTime.getTime() - (2 * 60 * 60 * 1000);
             return timestamp < twoHoursAgo;
         }
 
-        // Function to get the distance between two coordinates
         function getDistance(lat1, lon1, lat2, lon2) {
             const R = 6371e3; // Earth radius in meters
-            const φ1 = lat1 * Math.PI/180;
-            const φ2 = lat2 * Math.PI/180;
-            const Δφ = (lat2 - lat1) * Math.PI/180;
-            const Δλ = (lon1 - lon2) * Math.PI/180;
+            const φ1 = lat1 * Math.PI / 180;
+            const φ2 = lat2 * Math.PI / 180;
+            const Δφ = (lat2 - lat1) * Math.PI / 180;
+            const Δλ = (lon2 - lon1) * Math.PI / 180;
 
-            const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
-                      Math.cos(φ1) * Math.cos(φ2) *
-                      Math.sin(Δλ/2) * Math.sin(Δλ/2);
-            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            const a = Math.sin(Δφ / 2) ** 2 + Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) ** 2;
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 
-            const d = R * c; // in meters
-            return d;
+            return R * c; // in meters
         }
 
-
-// Function to fetch AQHI station data
-async function fetchAQHIStations() {
-    const url = 'https://data.environment.alberta.ca/EdwServices/aqhi/odata/Stations';
-    try {
-        const response = await fetch(url);
-        const data = await response.json();
-        return data.value.map(station => ({
-            name: station.StationName,
-            lat: station.Latitude,
-            lon: station.Longitude,
-            id: station.StationId
-        }));
-    } catch (error) {
-        console.error('Error fetching AQHI stations:', error);
-        return [];
-    }
-}
-
-// Function to find the closest station
-function findClosestStation(lat, lng, stations) {
-    let closestStation = null;
-    let minDistance = Infinity;
-
-    stations.forEach(station => {
-        const distance = getDistance(lat, lng, station.lat, station.lon);
-        if (distance < minDistance) {
-            minDistance = distance;
-            closestStation = { ...station, distance };
+        async function fetchAQHIStations() {
+            const url = 'https://data.environment.alberta.ca/EdwServices/aqhi/odata/Stations';
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+                return data.value.map(station => ({
+                    name: station.StationName,
+                    lat: station.Latitude,
+                    lon: station.Longitude,
+                    id: station.StationId
+                }));
+            } catch (error) {
+                console.error('Error fetching AQHI stations:', error);
+                return [];
+            }
         }
-    });
 
-    return closestStation;
-}
+        function findClosestStation(lat, lng, stations) {
+            let closestStation = null;
+            let minDistance = Infinity;
 
-// Function to add a station marker
-function addStationMarker(lat, lng, stationName, distance) {
-    const marker = L.circleMarker([lat, lng], {
-        radius: 8,
-        fillColor: 'green',
-        color: 'green',
-        weight: 1,
-        opacity: 1,
-        fillOpacity: 0.8
-    }).addTo(map)
-      .bindPopup(`<strong>${stationName}</strong><br>Distance: ${(distance / 1000).toFixed(2)} km`);
-    
-    existingMarkers.push(marker);
-}
+            stations.forEach(station => {
+                const distance = getDistance(lat, lng, station.lat, station.lon);
+                if (distance < minDistance) {
+                    minDistance = distance;
+                    closestStation = { ...station, distance };
+                }
+            });
 
-// Enhanced fetch function to include closest station
-async function fetchDataAndDisplay(lat, lng) {
-    // Fetch the closest PurpleAir sensor
-    await fetchPurpleAirData(lat, lng);
+            return closestStation;
+        }
 
-    // Fetch AQHI stations
-    const stations = await fetchAQHIStations();
+        function addStationMarker(lat, lng, stationName, distance) {
+            const marker = L.circleMarker([lat, lng], {
+                radius: 8,
+                fillColor: 'green',
+                color: 'green',
+                weight: 1,
+                opacity: 1,
+                fillOpacity: 0.8
+            }).addTo(map)
+                .bindPopup(`<strong>${stationName}</strong><br>Distance: ${(distance / 1000).toFixed(2)} km`);
+            
+            existingMarkers.push(marker);
+        }
 
-    // Find and display the closest station
-    const closestStation = findClosestStation(lat, lng, stations);
-    if (closestStation) {
-        const { lat: stationLat, lon: stationLon, name, distance } = closestStation;
-        addStationMarker(stationLat, stationLon, name, distance);
-    }
-}
-
-// Modified click event listener
-map.on('click', function(e) {
-    const { lat, lng } = e.latlng;
-
-    // Check if click is near an existing marker
-    if (!isNearExistingMarker(lat, lng)) {
-        fetchDataAndDisplay(lat, lng);
-    }
-});
-
-// Initial fetch for the map center
-fetchDataAndDisplay(map.getCenter().lat, map.getCenter().lng);
-
-
-        
-        // Function to adjust PM2.5 values based on humidity
         function adjustPm25(pm25, humidity) {
             let adjustedPm25 = pm25;
             if (humidity < 30) {
@@ -144,53 +101,44 @@ fetchDataAndDisplay(map.getCenter().lat, map.getCenter().lng);
             return adjustedPm25;
         }
 
-        // Function to check if a click is near an existing marker
         function isNearExistingMarker(lat, lng, threshold = 50) {
             return existingMarkers.some(marker => getDistance(lat, lng, marker.getLatLng().lat, marker.getLatLng().lng) < threshold);
         }
 
-        // Function to add a PurpleAir sensor marker to the map with color coding
         function addPurpleAirSensor(lat, lng, pm25, sensorName, lastSeen) {
-            // Determine the color based on PM2.5 value
-            const color = pm25 == null || pm25 === '' || isNaN(Number(pm25)) ? "#808080",  # Gray for NA or invalid PM2.5 :
-                pm2.5 > 100 ? "#640100" :  
-                pm2.5 > 90 ? "#9a0100" :  
-                pm2.5 > 80 ? "#cc0001" :  
-                pm2.5 > 70 ? "#fe0002" :  
-                pm2.5 > 60 ? "#fd6866" : 
-                pm2.5 > 50 ? "#ff9835" :  
-                pm2.5 > 40 ? "#ffcb00" :  
-                pm2.5 > 30 ? "#fffe03" :  
-                pm2.5 > 20 ? "#016797" :  
-                pm2.5 > 10 ? "#0099cb" :  
-                "#01cbff" ;
+            const color = pm25 === "N/A" || isNaN(Number(pm25)) ? '#808080' :
+                pm25 > 100 ? '#640100' :
+                pm25 > 90 ? '#9a0100' :
+                pm25 > 80 ? '#cc0001' :
+                pm25 > 70 ? '#fe0002' :
+                pm25 > 60 ? '#fd6866' :
+                pm25 > 50 ? '#ff9835' :
+                pm25 > 40 ? '#ffcb00' :
+                pm25 > 30 ? '#fffe03' :
+                pm25 > 20 ? '#016797' :
+                pm25 > 10 ? '#0099cb' : '#01cbff';
 
-
-            // Create a circle marker
             const marker = L.circleMarker([lat, lng], {
-                radius: 8, // Size of the circle
+                radius: 8,
                 fillColor: color,
                 color: color,
                 weight: 1,
                 opacity: 1,
                 fillOpacity: 0.8
             }).addTo(map)
-              .bindPopup(`<strong>${sensorName}</strong><br>PM2.5: ${pm25} µg/m³<br>Last Seen: ${lastSeen}`);
+                .bindPopup(`<strong>${sensorName}</strong><br>PM2.5: ${pm25} µg/m³<br>Last Seen: ${lastSeen}`);
             
             existingMarkers.push(marker);
         }
 
-        // Fetch and process PurpleAir data
         async function fetchPurpleAirData(lat, lng) {
             const API_KEY = 'ED3E067C-0904-11ED-8561-42010A800005';
             const radius = 5000; // 5 km radius
-            const purpleAirUrl = `https://api.purpleair.com/v1/sensors?location_type=0&radius=${radius}&fields=last_seen,latitude,longitude,humidity,pm2.5_60minute,pm2.5_10minute&lat=${lat}&lon=${lng}`;
+            const purpleAirUrl = `https://api.purpleair.com/v1/sensors?location_type=0&radius=${radius}&fields=last_seen,latitude,longitude,humidity,pm2.5_60minute&lat=${lat}&lon=${lng}`;
 
             try {
                 const response = await fetch(purpleAirUrl, {
-                    headers: {
-                        'X-API-Key': API_KEY
-                    }
+                    headers: { 'X-API-Key': API_KEY }
                 });
                 const data = await response.json();
 
@@ -198,7 +146,7 @@ fetchDataAndDisplay(map.getCenter().lat, map.getCenter().lng);
                 let minDistance = Infinity;
 
                 data.data.forEach(sensorData => {
-                    const [sensorId, last_seen, latitude, longitude, humidity, pm2_5_60minute, pm2_5_10minute] = sensorData;
+                    const [sensorId, last_seen, latitude, longitude, humidity, pm2_5_60minute] = sensorData;
                     const distance = getDistance(lat, lng, latitude, longitude);
 
                     if (distance < minDistance) {
@@ -208,45 +156,36 @@ fetchDataAndDisplay(map.getCenter().lat, map.getCenter().lng);
                 });
 
                 if (closestSensor) {
-                    const { sensorId, last_seen, latitude, longitude, humidity, pm2_5_60minute } = closestSensor;
-                    const adjustedTimestamp = new Date(last_seen * 1000);
+                    const { latitude, longitude, humidity, pm2_5_60minute, last_seen } = closestSensor;
+                    const timestamp = new Date(last_seen * 1000);
+                    const pm25Adjusted = isDataOlderThanTwoHours(timestamp.getTime()) ? "N/A" : adjustPm25(pm2_5_60minute, humidity).toFixed(1);
 
-                    // Check if the data is older than two hours and decide if it should show "N/A"
-                    let adjustedPm25_60minute = "N/A";
-                    if (!isDataOlderThanTwoHours(adjustedTimestamp.getTime())) {
-                        adjustedPm25_60minute = adjustPm25(pm2_5_60minute, humidity).toFixed(1);
-                    }
-
-                    // Add the sensor marker to the map with color coding
-                    addPurpleAirSensor(latitude, longitude, adjustedPm25_60minute, `Sensor ${sensorId}`, adjustedTimestamp.toLocaleString());
-                } else {
-                    console.error('No sensors found within the specified radius.');
+                    addPurpleAirSensor(latitude, longitude, pm25Adjusted, `Sensor ${closestSensor.sensorId}`, timestamp.toLocaleString());
                 }
             } catch (error) {
                 console.error('Error fetching PurpleAir data:', error);
             }
         }
 
-        // Add click event listener to the map
+        async function fetchDataAndDisplay(lat, lng) {
+            await fetchPurpleAirData(lat, lng);
+
+            const stations = await fetchAQHIStations();
+            const closestStation = findClosestStation(lat, lng, stations);
+            if (closestStation) {
+                const { lat: stationLat, lon: stationLon, name, distance } = closestStation;
+                addStationMarker(stationLat, stationLon, name, distance);
+            }
+        }
+
         map.on('click', function(e) {
             const { lat, lng } = e.latlng;
-
-            // Check if click is near an existing marker
             if (!isNearExistingMarker(lat, lng)) {
-                fetchPurpleAirData(lat, lng);
+                fetchDataAndDisplay(lat, lng);
             }
         });
 
-        window.addEventListener('message', (event) => {
-            if (event.data === 'ready') {
-                // Initial data fetch for the map center
-                fetchPurpleAirData(map.getCenter().lat, map.getCenter().lng);
-            }
-        });
-
-        window.onload = () => {
-            window.parent.postMessage('ready', '*');
-        };
+        fetchDataAndDisplay(map.getCenter().lat, map.getCenter().lng);
     </script>
 </body>
 </html>
