@@ -50,6 +50,87 @@
             return d;
         }
 
+
+// Function to fetch AQHI station data
+async function fetchAQHIStations() {
+    const url = 'https://data.environment.alberta.ca/EdwServices/aqhi/odata/Stations';
+    try {
+        const response = await fetch(url);
+        const data = await response.json();
+        return data.value.map(station => ({
+            name: station.StationName,
+            lat: station.Latitude,
+            lon: station.Longitude,
+            id: station.StationId
+        }));
+    } catch (error) {
+        console.error('Error fetching AQHI stations:', error);
+        return [];
+    }
+}
+
+// Function to find the closest station
+function findClosestStation(lat, lng, stations) {
+    let closestStation = null;
+    let minDistance = Infinity;
+
+    stations.forEach(station => {
+        const distance = getDistance(lat, lng, station.lat, station.lon);
+        if (distance < minDistance) {
+            minDistance = distance;
+            closestStation = { ...station, distance };
+        }
+    });
+
+    return closestStation;
+}
+
+// Function to add a station marker
+function addStationMarker(lat, lng, stationName, distance) {
+    const marker = L.circleMarker([lat, lng], {
+        radius: 8,
+        fillColor: 'green',
+        color: 'green',
+        weight: 1,
+        opacity: 1,
+        fillOpacity: 0.8
+    }).addTo(map)
+      .bindPopup(`<strong>${stationName}</strong><br>Distance: ${(distance / 1000).toFixed(2)} km`);
+    
+    existingMarkers.push(marker);
+}
+
+// Enhanced fetch function to include closest station
+async function fetchDataAndDisplay(lat, lng) {
+    // Fetch the closest PurpleAir sensor
+    await fetchPurpleAirData(lat, lng);
+
+    // Fetch AQHI stations
+    const stations = await fetchAQHIStations();
+
+    // Find and display the closest station
+    const closestStation = findClosestStation(lat, lng, stations);
+    if (closestStation) {
+        const { lat: stationLat, lon: stationLon, name, distance } = closestStation;
+        addStationMarker(stationLat, stationLon, name, distance);
+    }
+}
+
+// Modified click event listener
+map.on('click', function(e) {
+    const { lat, lng } = e.latlng;
+
+    // Check if click is near an existing marker
+    if (!isNearExistingMarker(lat, lng)) {
+        fetchDataAndDisplay(lat, lng);
+    }
+});
+
+// Initial fetch for the map center
+fetchDataAndDisplay(map.getCenter().lat, map.getCenter().lng);
+
+
+        
         // Function to adjust PM2.5 values based on humidity
         function adjustPm25(pm25, humidity) {
             let adjustedPm25 = pm25;
@@ -71,10 +152,19 @@
         // Function to add a PurpleAir sensor marker to the map with color coding
         function addPurpleAirSensor(lat, lng, pm25, sensorName, lastSeen) {
             // Determine the color based on PM2.5 value
-            const color = pm25 == null || pm25 === '' || isNaN(Number(pm25)) ? 'gray' :
-                          pm25 <= 30 ? 'blue' :
-                          pm25 <= 60 ? 'orange' :
-                          pm25 <= 100 ? 'red' : 'brown';
+            const color = pm25 == null || pm25 === '' || isNaN(Number(pm25)) ? "#808080",  # Gray for NA or invalid PM2.5 :
+                pm2.5 > 100 ? "#640100" :  
+                pm2.5 > 90 ? "#9a0100" :  
+                pm2.5 > 80 ? "#cc0001" :  
+                pm2.5 > 70 ? "#fe0002" :  
+                pm2.5 > 60 ? "#fd6866" : 
+                pm2.5 > 50 ? "#ff9835" :  
+                pm2.5 > 40 ? "#ffcb00" :  
+                pm2.5 > 30 ? "#fffe03" :  
+                pm2.5 > 20 ? "#016797" :  
+                pm2.5 > 10 ? "#0099cb" :  
+                "#01cbff" ;
+
 
             // Create a circle marker
             const marker = L.circleMarker([lat, lng], {
