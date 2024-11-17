@@ -10,20 +10,94 @@
             height: 800px;
             width: 100%;
         }
+        #reset-button {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 1000;
+            background-color: white;
+            border: 1px solid #ccc;
+            padding: 5px 10px;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
     <div id="map"></div>
+    <button id="reset-button">Reset Map</button>
+
 
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
     <script>
         const map = L.map('map').setView([53.535645, -113.47194], 13);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        // Define OpenStreetMap and Satellite layers
+        const openStreetMapLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        });
+        const satelliteLayer = L.tileLayer('https://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
+            subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
+            attribution: '&copy; Google'
+        });
+        // Add OpenStreetMap as default
+        openStreetMapLayer.addTo(map);
+
+        // Add layer control for toggling between OpenStreetMap and Satellite view
+        L.control.layers({
+            'OpenStreetMap': openStreetMapLayer,
+            'Satellite': satelliteLayer
         }).addTo(map);
-
+        
         let existingMarkers = [];
+        let selectedMarker = null;
 
+        function clearMap() {
+            existingMarkers.forEach(marker => map.removeLayer(marker));
+            existingMarkers = [];
+            if (selectedMarker) {
+                map.removeLayer(selectedMarker);
+                selectedMarker = null;
+            }
+        }
+
+        document.getElementById('reset-button').addEventListener('click', clearMap);
+
+        async function fetchAQHIStations() {
+            const url = 'https://data.environment.alberta.ca/EdwServices/aqhi/odata/Stations';
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+                return data.value.map(station => ({
+                    name: station.StationName,
+                    lat: station.Latitude,
+                    lon: station.Longitude,
+                    id: station.StationId,
+                    aqhi: station.AQHI
+                }));
+            } catch (error) {
+                console.error('Error fetching AQHI stations:', error);
+                return [];
+            }
+        }
+
+        async function fetchPurpleAirData() {
+            const API_KEY = 'ED3E067C-0904-11ED-8561-42010A800005';
+            const purpleAirUrl = `https://api.purpleair.com/v1/sensors?fields=latitude,longitude&location_type=0`;
+
+            try {
+                const response = await fetch(purpleAirUrl, {
+                    headers: { 'X-API-Key': API_KEY }
+                });
+                const data = await response.json();
+                return data.data.map(sensor => ({
+                    lat: sensor[1],
+                    lon: sensor[2]
+                }));
+            } catch (error) {
+                console.error('Error fetching PurpleAir data:', error);
+                return [];
+            }
+        }
+        
         function isDataOlderThanTwoHours(timestamp) {
             const currentTime = new Date();
             const twoHoursAgo = currentTime.getTime() - (2 * 60 * 60 * 1000);
@@ -43,6 +117,67 @@
             return R * c; // in meters
         }
 
+        async function findAndDisplayClosest(lat, lng) {
+            clearMap();
+
+            // Add selected point marker
+            selectedMarker = L.marker([lat, lng]).addTo(map)
+                .bindPopup("Selected Location").openPopup();
+
+            const aqhiStations = await fetchAQHIStations();
+            const purpleAirSensors = await fetchPurpleAirData();
+
+            let closestAQHIStation = null;
+            let closestPurpleAirSensor = null;
+
+            let minAQHIDistance = Infinity;
+            let minPurpleAirDistance = Infinity;
+
+            aqhiStations.forEach(station => {
+                const distance = getDistance(lat, lng, station.lat, station.lon);
+                if (distance < minAQHIDistance) {
+                    minAQHIDistance = distance;
+                    closestAQHIStation = station;
+                }
+            });
+
+            purpleAirSensors.forEach(sensor => {
+                const distance = getDistance(lat, lng, sensor.lat, sensor.lon);
+                if (distance < minPurpleAirDistance) {
+                    minPurpleAirDistance = distance;
+                    closestPurpleAirSensor = sensor;
+                }
+            });
+
+            if (closestAQHIStation) {
+                const { lat: stationLat, lon: stationLon, name } = closestAQHIStation;
+                const marker = L.circleMarker([stationLat, stationLon], {
+                    radius: 8,
+                    fillColor: 'blue',
+                    color: 'blue',
+                    weight: 1,
+                    opacity: 1,
+                    fillOpacity: 0.8
+                }).addTo(map)
+                    .bindPopup(`<strong>Closest AQHI Station</strong><br>${name}<br>Distance: ${(minAQHIDistance / 1000).toFixed(2)} km`);
+                existingMarkers.push(marker);
+            }
+
+            if (closestPurpleAirSensor) {
+                const { lat: sensorLat, lon: sensorLon } = closestPurpleAirSensor;
+                const marker = L.circleMarker([sensorLat, sensorLon], {
+                    radius: 8,
+                    fillColor: 'red',
+                    color: 'red',
+                    weight: 1,
+                    opacity: 1,
+                    fillOpacity: 0.8
+                }).addTo(map)
+                    .bindPopup(`<strong>Closest PurpleAir Sensor</strong><br>Distance: ${(minPurpleAirDistance / 1000).toFixed(2)} km`);
+                existingMarkers.push(marker);
+            }
+        }
+        
         async function fetchAQHIStations() {
             const url = 'https://data.environment.alberta.ca/EdwServices/aqhi/odata/Stations';
             try {
@@ -52,7 +187,8 @@
                     name: station.StationName,
                     lat: station.Latitude,
                     lon: station.Longitude,
-                    id: station.StationId
+                    id: station.StationId,
+                    aqhi: station.AQHI // Assuming AQHI data is available here
                 }));
             } catch (error) {
                 console.error('Error fetching AQHI stations:', error);
@@ -60,6 +196,27 @@
             }
         }
 
+        function addAQHIMarker(lat, lng, stationName, aqhi) {
+            const color = getColor(aqhi);
+            const marker = L.circleMarker([lat, lng], {
+                radius: 10,
+                fillColor: color,
+                color: color,
+                weight: 1,
+                opacity: 1,
+                fillOpacity: 0.8
+            }).addTo(map)
+                .bindPopup(`<strong>${stationName}</strong><br>AQHI: ${aqhi}`);
+            existingMarkers.push(marker);
+        }
+
+        async function displayAQHIStations() {
+            const stations = await fetchAQHIStations();
+            stations.forEach(station => {
+                addAQHIMarker(station.lat, station.lon, station.name, station.aqhi);
+            });
+        }
+        
         function findClosestStation(lat, lng, stations) {
             let closestStation = null;
             let minDistance = Infinity;
@@ -78,8 +235,8 @@
         function addStationMarker(lat, lng, stationName, distance) {
             const marker = L.circleMarker([lat, lng], {
                 radius: 8,
-                fillColor: 'green',
-                color: 'green',
+                fillColor: getColor(aqhi),
+                color: getColor(aqhi),
                 weight: 1,
                 opacity: 1,
                 fillOpacity: 0.8
@@ -105,6 +262,22 @@
             return existingMarkers.some(marker => getDistance(lat, lng, marker.getLatLng().lat, marker.getLatLng().lng) < threshold);
         }
 
+        function getColor(aqhi) {
+            if (isNaN(aqhi) || aqhi === "NA") return "#808080";
+            const aqhiNum = parseFloat(aqhi);
+            if (aqhiNum === 1) return "#01cbff";
+            if (aqhiNum === 2) return "#0099cb";
+            if (aqhiNum === 3) return "#016797";
+            if (aqhiNum === 4) return "#fffe03";
+            if (aqhiNum === 5) return "#ffcb00";
+            if (aqhiNum === 6) return "#ff9835";
+            if (aqhiNum === 7) return "#fd6866";
+            if (aqhiNum === 8) return "#fe0002";
+            if (aqhiNum === 9) return "#cc0001";
+            if (aqhiNum === 10 || aqhi === "10+") return "#9a0100";
+            return "#808080";
+        }
+        
         function addPurpleAirSensor(lat, lng, pm25, sensorName, lastSeen) {
             const color = pm25 === "N/A" || isNaN(Number(pm25)) ? '#808080' :
                 pm25 > 100 ? '#640100' :
@@ -180,12 +353,8 @@
 
         map.on('click', function(e) {
             const { lat, lng } = e.latlng;
-            if (!isNearExistingMarker(lat, lng)) {
-                fetchDataAndDisplay(lat, lng);
-            }
+            findAndDisplayClosest(lat, lng);
         });
-
-        fetchDataAndDisplay(map.getCenter().lat, map.getCenter().lng);
     </script>
 </body>
 </html>
