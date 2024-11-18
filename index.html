@@ -62,6 +62,18 @@
             }
         }
 
+        // Adjust PM2.5 based on RH
+        function adjustPM25(PM25, RH) {
+            if (RH === null || isNaN(RH)) RH = 50; // Default RH to 50 if not available
+            if (RH < 30) {
+                return PM25 / (1 + 0.24 / (100 / 30 - 1));
+            } else if (RH > 70) {
+                return PM25 / (1 + 0.24 / (100 / 70 - 1));
+            } else {
+                return PM25 / (1 + 0.24 / (100 / RH - 1));
+            }
+        }
+        
         // Fetch combined AQHI station and reading data
         async function fetchCombinedAQHIData() {
             const stationUrl = 'https://data.environment.alberta.ca/EdwServices/aqhi/odata/Stations';
@@ -103,7 +115,7 @@
         // Fetch PurpleAir data
         async function fetchPurpleAirData() {
             const API_KEY = 'ED3E067C-0904-11ED-8561-42010A800005';
-            const purpleAirUrl = `https://api.purpleair.com/v1/sensors?fields=latitude,longitude,pm2.5_60minute`;
+            const purpleAirUrl = `https://api.purpleair.com/v1/sensors?fields=name,latitude,longitude,pm2.5_60minute,humidity`;
 
             try {
                 const response = await fetch(purpleAirUrl, {
@@ -111,9 +123,11 @@
                 });
                 const data = await response.json();
                 return data.data.map(sensor => ({
-                    lat: sensor[1],
-                    lon: sensor[2],
-                    pm25: sensor[3], // Assuming the PM2.5 value is the 4th field
+                    name: sensor[1],
+                    lat: sensor[2],
+                    lon: sensor[3],
+                    pm25: adjustPM25(sensor[4], sensor[5]), // Adjust PM2.5 using the function
+                    rh: sensor[5],
                 }));
             } catch (error) {
                 console.error('Error fetching PurpleAir data:', error);
@@ -219,7 +233,9 @@
                     color: getPM25Color(pm25),
                     weight: 1,
                     fillOpacity: 0.8,
-                }).addTo(map).bindPopup(`<strong>Closest PurpleAir Sensor</strong><br>PM2.5: ${pm25}<br>Distance: ${(minPurpleAirDistance / 1000).toFixed(2)} km`);
+                }).addTo(map).bindPopup(
+                    `<strong>Closest PurpleAir Sensor</strong><br>PM2.5: ${pm25.toFixed(2)} µg/m³<br>Distance: ${(minPurpleAirDistance / 1000).toFixed(2)} km`
+                );
                 existingMarkers.push(marker);
             }
         }
