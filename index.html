@@ -64,24 +64,49 @@
             }
         }
 
-        // Fetch AQHI stations
-        async function fetchAQHIStations() {
-            const url = 'https://data.environment.alberta.ca/EdwServices/aqhi/odata/Stations';
-            try {
-                const response = await fetch(url);
-                const data = await response.json();
-                return data.value.map(station => ({
-                    name: station.StationName,
-                    lat: station.Latitude,
-                    lon: station.Longitude,
-                    id: station.StationId,
-                    aqhi: station.AQHI
-                }));
-            } catch (error) {
-                console.error('Error fetching AQHI stations:', error);
-                return [];
-            }
-        }
+// Fetch and combine AQHI station data with AQHI readings
+async function fetchCombinedAQHIData() {
+    const stationUrl = 'https://data.environment.alberta.ca/EdwServices/aqhi/odata/Stations';
+    const aqhiUrl = 'https://data.environment.alberta.ca/EdwServices/aqhi/odata/StationAqhis';
+
+    try {
+        // Fetch station data
+        const stationResponse = await fetch(stationUrl);
+        const stationData = await stationResponse.json();
+        const stations = stationData.value.map(station => ({
+            name: station.Name,
+            airshed: station.AirshedName,
+            lat: station.Latitude,
+            lon: station.Longitude,
+        }));
+
+        // Fetch AQHI data
+        const aqhiResponse = await fetch(aqhiUrl);
+        const aqhiData = await aqhiResponse.json();
+        const aqhiReadings = aqhiData.value.map(reading => ({
+            name: reading.StationName,
+            date: reading.ReadingDate,
+            aqhi: reading.Aqhi,
+        }));
+
+        // Combine data based on station name
+        const combinedData = stations.map(station => {
+            const matchingReading = aqhiReadings.find(reading => reading.name === station.name);
+            return {
+                ...station,
+                aqhi: matchingReading ? matchingReading.aqhi : null,
+                date: matchingReading ? matchingReading.date : null,
+            };
+        });
+
+        return combinedData;
+
+    } catch (error) {
+        console.error('Error fetching combined AQHI data:', error);
+        return [];
+    }
+}
+	    
 
         // Fetch PurpleAir sensors
         async function fetchPurpleAirData() {
