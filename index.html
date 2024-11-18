@@ -245,15 +245,10 @@
             // Ensure the event originated from the map and not from a marker
             if (!e.originalEvent || L.DomEvent._skipped(e.originalEvent)) return;
                 const { lat, lng } = e.latlng;
-
-        // Find and display closest AQHI and PurpleAir data
-        findAndDisplayClosest(lat, lng);
             
-        // Clear the previous selected marker if it exists
-        if (selectedMarker) {
-            map.removeLayer(selectedMarker);
-        }
-    
+            // Find and display closest AQHI and PurpleAir data
+            findAndDisplayClosest(lat, lng);
+               
         selectedMarker = L.marker([lat, lng]).addTo(map)
             .bindPopup(`Selected Location<br>Latitude: ${lat.toFixed(5)}, Longitude: ${lng.toFixed(5)}`)
             .openPopup();
