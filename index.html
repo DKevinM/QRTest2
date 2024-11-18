@@ -242,21 +242,21 @@
         
         // Map click event
 map.on('click', function (e) {
-    // Prevent marker clicks from triggering this event
-    if (e.originalEvent && e.originalEvent.target.tagName === 'CANVAS') {
+    // Ensure the event originated from the map and not from a marker
+    if (!e.originalEvent || L.DomEvent._skipped(e.originalEvent)) return;
         const { lat, lng } = e.latlng;
 
-        // Find and display closest AQHI and PurpleAir data
-        findAndDisplayClosest(lat, lng);
-
-        // Add marker for the selected location with coordinates
-        if (selectedMarker) {
-            map.removeLayer(selectedMarker); // Remove any existing selected marker
-        }
+    // Clear the previous selected marker if it exists
+    if (selectedMarker) {
+        map.removeLayer(selectedMarker);
+    }
+    
         selectedMarker = L.marker([lat, lng]).addTo(map)
             .bindPopup(`Selected Location<br>Latitude: ${lat.toFixed(5)}, Longitude: ${lng.toFixed(5)}`)
             .openPopup();
     }
+        // Find and display closest AQHI and PurpleAir data
+        findAndDisplayClosest(lat, lng);
         });
     </script>
 </body>
