@@ -246,6 +246,9 @@
             if (!e.originalEvent || L.DomEvent._skipped(e.originalEvent)) return;
                 const { lat, lng } = e.latlng;
 
+        // Find and display closest AQHI and PurpleAir data
+        findAndDisplayClosest(lat, lng);
+            
         // Clear the previous selected marker if it exists
         if (selectedMarker) {
             map.removeLayer(selectedMarker);
@@ -255,8 +258,6 @@
             .bindPopup(`Selected Location<br>Latitude: ${lat.toFixed(5)}, Longitude: ${lng.toFixed(5)}`)
             .openPopup();
         }
-        // Find and display closest AQHI and PurpleAir data
-        findAndDisplayClosest(lat, lng);
         });
     </script>
 </body>
