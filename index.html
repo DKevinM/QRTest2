@@ -270,8 +270,24 @@
 
         // Map click event
         map.on('click', function (e) {
-            const { lat, lng } = e.latlng;
+                const lat = e.latlng.lat;
+                const lng = e.latlng.lng;
             findAndDisplayClosest(lat, lng);
+                // Reverse geocoding with Nominatim
+                    const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`;                
+                    fetch(url)
+                        .then(response => response.json())
+                        .then(data => {
+                            const address = data.display_name || "No address found";
+                            L.popup()
+                                .setLatLng(e.latlng)
+                                .setContent(`Address: ${address}`)
+                                .openOn(map);
+                        })
+                        .catch(error => {
+                            console.error("Error with reverse geocoding:", error);
+                        });
+                });
         });
     </script>
 </body>
