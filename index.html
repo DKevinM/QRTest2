@@ -120,8 +120,6 @@
         function clearMap() {
             // Remove all markers from the map
             existingMarkers.forEach(marker => map.removeLayer(marker));
-            
-            // Clear the array of markers
             existingMarkers = [];
         
             // Clear the selected marker reference
@@ -330,7 +328,7 @@ map.on('click', function (e) {
             const address = data.display_name || "No address found";
 
             // Add a marker with latitude, longitude, and address as the content
-            L.marker([lat, lng])
+            selectedMarker = L.marker([lat, lng])
                 .addTo(map)
                 .bindPopup(`
                     <strong>Selected Location</strong><br>
