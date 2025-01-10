@@ -337,6 +337,8 @@ map.on('click', function (e) {
                     Address: ${address}
                 `)
                 .openPopup(); // Keep the popup open initially
+            // Track this marker in existingMarkers for easy removal
+            existingMarkers.push(selectedMarker);
         })
         .catch(error => {
             console.error("Error with reverse geocoding:", error);
