@@ -15,6 +15,18 @@
             height: 100%;
             width: 100%;
         }
+        #location-button {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            z-index: 1000;
+            background-color: white;
+            border: 1px solid #ccc;
+            padding: 5px 10px;
+            cursor: pointer;
+            font-size: 16px;
+            border-radius: 5px;
+        }
         .legend {
             position: absolute;
             bottom: 10px;
@@ -46,6 +58,7 @@
 <body>
     <div id="map-container">
         <div id="map"></div>
+        <button id="location-button">Zoom to My Current Location</button>
         <div class="legend">
             <img src="aqhilegend.png" alt="Legend">
         </div>
@@ -54,7 +67,7 @@
 
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
     <script>
-        const map = L.map('map').setView([53.535645, -113.47194], 11);
+        const map = L.map('map').setView([53.535645, -113.47194], 8);
 
         // Define map layers
         const openStreetMapLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -69,6 +82,31 @@
         openStreetMapLayer.addTo(map);
         L.control.layers({ 'OpenStreetMap': openStreetMapLayer, 'Satellite': satelliteLayer }).addTo(map);
 
+        // Handle "Zoom to My Current Location" button click
+        document.getElementById('location-button').addEventListener('click', function () {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    position => {
+                        const lat = position.coords.latitude;
+                        const lng = position.coords.longitude;
+
+                        // Zoom to user's location and add a marker
+                        map.setView([lat, lng], 15);
+                        L.marker([lat, lng])
+                            .addTo(map)
+                            .bindPopup("You are here!")
+                            .openPopup();
+                    },
+                    error => {
+                        console.error("Geolocation failed: ", error);
+                        alert("Unable to access your location. Please check your browser settings.");
+                    }
+                );
+            } else {
+                alert("Geolocation is not supported by your browser.");
+            }
+        });
+        
         // Global variables for markers
         let existingMarkers = [];
         let selectedMarker = null;
