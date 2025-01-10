@@ -215,7 +215,7 @@
             if (closestAQHIStation) {
                 const { lat: stationLat, lon: stationLon, name, aqhi } = closestAQHIStation;
                 const marker = L.circleMarker([stationLat, stationLon], {
-                    radius: 8,
+                    radius: 12,
                     fillColor: getAQHIColor(aqhi),
                     color: getAQHIColor(aqhi),
                     weight: 1,
