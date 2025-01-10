@@ -20,10 +20,16 @@
             padding: 5px 10px;
             cursor: pointer;
         }
+        h1 { font-size: 24px; margin-bottom: 10px; }
+        .legend { text-align: center; margin-top: 10px; }
+        .legend img { width: 85%; max-width: 400px; }
     </style>
 </head>
 <body>
     <div id="map"></div>
+    <div class="legend">
+        <img src="aqhilegend.png" alt="Legend">
+    </div>
     <button id="reset-button">Reset Map</button>
 
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
@@ -218,7 +224,7 @@
                     radius: 12,
                     fillColor: getAQHIColor(aqhi),
                     color: getAQHIColor(aqhi),
-                    weight: 1,
+                    weight: 2,
                     fillOpacity: 0.8,
                 }).addTo(map).bindPopup(
                     `<strong>Closest AQHI Station</strong><br>${name}<br>AQHI: ${aqhi}<br>Distance: ${(minAQHIDistance / 1000).toFixed(2)} km`
