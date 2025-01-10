@@ -6,9 +6,30 @@
     <title>Mapping Closest Stations</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
     <style>
-        #map {
+        #map-container {
+            position: relative;
             height: 800px;
             width: 100%;
+        }
+        #map {
+            height: 100%;
+            width: 100%;
+        }
+        .legend {
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: white;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            z-index: 1000;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .legend img {
+            width: 100%;
+            max-width: 400px;
         }
         #reset-button {
             position: absolute;
@@ -20,17 +41,16 @@
             padding: 5px 10px;
             cursor: pointer;
         }
-        h1 { font-size: 24px; margin-bottom: 10px; }
-        .legend { text-align: center; margin-top: 10px; }
-        .legend img { width: 85%; max-width: 400px; }
     </style>
 </head>
 <body>
-    <div id="map"></div>
-    <div class="legend">
-        <img src="aqhilegend.png" alt="Legend">
+    <div id="map-container">
+        <div id="map"></div>
+        <div class="legend">
+            <img src="aqhilegend.png" alt="Legend">
+        </div>
+        <button id="reset-button">Reset Map</button>
     </div>
-    <button id="reset-button">Reset Map</button>
 
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
     <script>
@@ -242,7 +262,7 @@
                     weight: 1,
                     fillOpacity: 0.8,
                 }).addTo(map).bindPopup(
-                    `<strong>Closest PurpleAir Sensor</strong><br>PM2.5: ${pm25.toFixed(2)} µg/m³<br>Distance: ${(minPurpleAirDistance / 1000).toFixed(2)} km`
+                    `<strong>Closest PurpleAir Sensor</strong><br>PM2.5: ${pm25.toFixed(1)} µg/m³<br>Distance: ${(minPurpleAirDistance / 1000).toFixed(2)} km`
                 );
                 existingMarkers.push(marker);
             }
