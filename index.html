@@ -118,13 +118,17 @@
 
         // Clear map function
         function clearMap() {
-            // Remove all markers from the map
-            existingMarkers.forEach(marker => map.removeLayer(marker));
-            existingMarkers = [];
-        
-            // Clear the selected marker reference
-            if (selectedMarker) {
-                map.removeLayer(selectedMarker);
+            // Iterate over all layers on the map
+            map.eachLayer(layer => {
+                // Check if the layer is a marker
+                if (layer instanceof L.Marker) {
+                    map.removeLayer(layer);
+                }
+            });
+                // Clear the array of markers
+                existingMarkers = [];
+            
+                // Reset the selectedMarker reference
                 selectedMarker = null;
             }
         }
@@ -316,9 +320,6 @@ map.on('click', function (e) {
 
     // Clear the map before adding new markers
     clearMap();
-    
-    // Call your function to find and display closest sensors/stations
-    findAndDisplayClosest(lat, lng);
 
     // Reverse geocoding with Nominatim
     const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`;
