@@ -118,8 +118,13 @@
 
         // Clear map function
         function clearMap() {
+            // Remove all markers from the map
             existingMarkers.forEach(marker => map.removeLayer(marker));
+            
+            // Clear the array of markers
             existingMarkers = [];
+        
+            // Clear the selected marker reference
             if (selectedMarker) {
                 map.removeLayer(selectedMarker);
                 selectedMarker = null;
@@ -311,6 +316,9 @@ map.on('click', function (e) {
     const lat = e.latlng.lat;
     const lng = e.latlng.lng;
 
+    // Clear the map before adding new markers
+    clearMap();
+    
     // Call your function to find and display closest sensors/stations
     findAndDisplayClosest(lat, lng);
 
