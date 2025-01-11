@@ -93,17 +93,11 @@
         
         // Clear map function
         function clearMap() {
-            // Iterate over all layers on the map
-            map.eachLayer(layer => {
-                if (layer instanceof L.Marker) {
-                    map.removeLayer(layer);
-                }
-            });
-
-            // Clear the array of markers
-            existingMarkers = [];
-            selectedMarker = null;
-        }        
+            // Remove all markers in existingMarkers
+            existingMarkers.forEach(marker => map.removeLayer(marker));
+            existingMarkers = []; // Reset the markers array
+            selectedMarker = null; // Reset the selected marker reference
+        }    
 
         // Adjust PM2.5 based on RH
         function adjustPM25(PM25, RH) {
@@ -253,7 +247,8 @@
 
             // Add selected marker
             selectedMarker = L.marker([lat, lng]).addTo(map).bindPopup(`Selected Location<br>Latitude: ${lat.toFixed(5)}, Longitude: ${lng.toFixed(5)}`).openPopup();
-
+            existingMarkers.push(selectedMarker); // Track the selected marker
+            
             const aqhiStations = await fetchCombinedAQHIData();
             const purpleAirSensors = await fetchPurpleAirData();
 
