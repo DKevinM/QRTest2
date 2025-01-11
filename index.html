@@ -338,6 +338,9 @@
 
             // Track this marker in existingMarkers for easy removal
             existingMarkers.push(selectedMarker);
+
+            // Call function to find and display the closest station
+            findAndDisplayClosest(lat, lng);
         })
         .catch(error => {
             console.error("Error with reverse geocoding:", error);
