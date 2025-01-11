@@ -243,14 +243,12 @@
 
         // Find and display closest sensors and stations
         async function findAndDisplayClosest(lat, lng) {
-            clearMap();
+            const aqhiStations = await fetchCombinedAQHIData();
+            const purpleAirSensors = await fetchPurpleAirData();
 
             // Add selected marker
             selectedMarker = L.marker([lat, lng]).addTo(map).bindPopup(`Selected Location<br>Latitude: ${lat.toFixed(5)}, Longitude: ${lng.toFixed(5)}`).openPopup();
             existingMarkers.push(selectedMarker); // Track the selected marker
-            
-            const aqhiStations = await fetchCombinedAQHIData();
-            const purpleAirSensors = await fetchPurpleAirData();
 
             // Find closest AQHI station
             let closestAQHIStation = null;
@@ -277,7 +275,7 @@
             // Display closest AQHI station
             if (closestAQHIStation) {
                 const { lat: stationLat, lon: stationLon, name, aqhi } = closestAQHIStation;
-                const marker = L.circleMarker([stationLat, stationLon], {
+                const stationMarker = L.circleMarker([stationLat, stationLon], {
                     radius: 15,
                     fillColor: getAQHIColor(aqhi),
                     color: getAQHIColor(aqhi),
@@ -286,13 +284,13 @@
                 }).addTo(map).bindPopup(
                     `<strong>Closest AQHI Station</strong><br>${name}<br>AQHI: ${aqhi}<br>Distance: ${(minAQHIDistance / 1000).toFixed(2)} km`
                 );
-                existingMarkers.push(marker);
+                existingMarkers.push(stationMarker);
             }
 
             // Display closest PurpleAir sensor
             if (closestPurpleAirSensor) {
                 const { lat: sensorLat, lon: sensorLon, pm25 } = closestPurpleAirSensor;
-                const marker = L.circleMarker([sensorLat, sensorLon], {
+                const sensorMarker = L.circleMarker([sensorLat, sensorLon], {
                     radius: 8,
                     fillColor: getPM25Color(pm25),
                     color: getPM25Color(pm25),
@@ -301,7 +299,7 @@
                 }).addTo(map).bindPopup(
                     `<strong>Closest PurpleAir Sensor</strong><br>PM2.5: ${pm25.toFixed(1)} µg/m³<br>Distance: ${(minPurpleAirDistance / 1000).toFixed(2)} km`
                 );
-                existingMarkers.push(marker);
+                existingMarkers.push(sensorMarker);
             }
         }
 
