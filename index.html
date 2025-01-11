@@ -80,6 +80,8 @@
 
         // Add default layer and layer control
         openStreetMapLayer.addTo(map);
+
+        // Layer control
         L.control.layers({ 'OpenStreetMap': openStreetMapLayer, 'Satellite': satelliteLayer }).addTo(map);
 
         // Handle "Zoom to My Current Location" button click
@@ -120,19 +122,15 @@
         function clearMap() {
             // Iterate over all layers on the map
             map.eachLayer(layer => {
-                // Check if the layer is a marker
                 if (layer instanceof L.Marker) {
                     map.removeLayer(layer);
                 }
             });
-                // Clear the array of markers
-                existingMarkers = [];
-            
-                // Reset the selectedMarker reference
-                selectedMarker = null;
-            }
-        }
 
+            // Clear the array of markers
+            existingMarkers = [];
+            selectedMarker = null;
+            
         // Adjust PM2.5 based on RH
         function adjustPM25(PM25, RH) {
             if (RH === null || isNaN(RH)) RH = 50; // Default RH to 50 if not available
