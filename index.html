@@ -289,7 +289,7 @@
 
             // Display closest PurpleAir sensor
             if (closestPurpleAirSensor) {
-                const { lat: sensorLat, lon: sensorLon, pm25 } = closestPurpleAirSensor;
+                const { lat: sensorLat, lon: sensorLon, name: sensorName, pm25 } = closestPurpleAirSensor;
                 const sensorMarker = L.circleMarker([sensorLat, sensorLon], {
                     radius: 8,
                     fillColor: getPM25Color(pm25),
@@ -297,7 +297,7 @@
                     weight: 1,
                     fillOpacity: 0.8,
                 }).addTo(map).bindPopup(
-                    `<strong>Closest PurpleAir Sensor</strong><br>${sensor}<br>PM2.5: ${pm25.toFixed(1)} µg/m³<br>Distance: ${(minPurpleAirDistance / 1000).toFixed(2)} km`
+                    `<strong>Closest PurpleAir Sensor</strong><br>${sensorName}<br>PM2.5: ${pm25.toFixed(1)} µg/m³<br>Distance: ${(minPurpleAirDistance / 1000).toFixed(2)} km`
                 );
                 existingMarkers.push(sensorMarker);
             }
