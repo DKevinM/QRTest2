@@ -136,6 +136,56 @@
             }
         });       
 
+
+        async function fetchWeatherData(lat, lon) {
+            const weatherUrl = `https://api.weather.gc.ca/collections/weather-observations/items?bbox=${lon - 0.05},${lat - 0.05},${lon + 0.05},${lat + 0.05}`;
+            const forecastUrl = `https://api.weather.gc.ca/collections/weather-forecasts-hourly/items?lat=${lat}&lon=${lon}`;
+
+            try {
+                const [weatherRes, forecastRes] = await Promise.all([
+                    fetch(weatherUrl),
+                    fetch(forecastUrl)
+                ]);
+        
+                const weatherData = await weatherRes.json();
+                const forecastData = await forecastRes.json();
+        
+                // Get closest current weather reading
+                const current = weatherData.features?.[0]?.properties;
+                const forecast = forecastData.features?.[0]?.properties?.periods?.[0];
+        
+                if (current) {
+                    const weatherPopup = L.popup({ maxWidth: 300 })
+                        .setLatLng([lat, lon])
+                        .setContent(`
+                            <strong>Current Weather</strong><br>
+                            Temp: ${current.temperature} °C<br>
+                            Wind: ${current.wind_speed} km/h<br>
+                            Pressure: ${current.pressure} kPa
+                        `)
+                        .openOn(map);
+                }
+        
+                if (forecast) {
+                    const forecastPopup = L.popup({ maxWidth: 300 })
+                        .setLatLng([lat + 0.02, lon]) // Slight offset
+                        .setContent(`
+                            <strong>Hourly Forecast</strong><br>
+                            ${forecast.start_time_local}<br>
+                            Temp: ${forecast.temperature} °C<br>
+                            Wind: ${forecast.wind_speed} km/h<br>
+                            Precip: ${forecast.probability_of_precipitation}%
+                        `)
+                        .openOn(map);
+                }
+        
+            } catch (error) {
+                console.error('Error fetching weather or forecast data:', error);
+            }
+        }
+
+
+        
         // Fetch combined AQHI station and reading data
         async function fetchCombinedAQHIData() {
             const stationUrl = 'https://data.environment.alberta.ca/EdwServices/aqhi/odata/Stations';
@@ -334,6 +384,7 @@
 
             // Call function to find and display the closest station
             findAndDisplayClosest(lat, lng);
+            fetchWeatherData(lat, lng);
         })
         .catch(error => {
             console.error("Error with reverse geocoding:", error);
@@ -354,6 +405,7 @@
             
             // Call function to find and display the closest station
             findAndDisplayClosest(lat, lng);
+            fetchWeatherData(lat, lng);
         });
 });
     </script>
