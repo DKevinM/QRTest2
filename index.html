@@ -386,9 +386,18 @@
                     const i = data.hourly.time.findIndex(t => t.slice(0, 13) === now);
                               if (i === -1) return;
                     const get = (field) => data.hourly[field][i];
-                
+
+                    const displayTime = new Date(weather.time).toLocaleString('en-CA', {
+                        timeZone: 'auto',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        day: '2-digit',
+                        month: 'short',
+                        weekday: 'short'
+                    });
+
                     const weather = {
-                      time: data.hourly.time[i],
+                      time: displayTime,
                       temperature: get("temperature_2m"),
                       humidity: get("relative_humidity_2m"),
                       precipitation: get("precipitation"),
