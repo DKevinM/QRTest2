@@ -130,6 +130,7 @@
         // Reset button functionality
         document.getElementById('reset-button').addEventListener('click', () => {
             document.querySelector("#weather-table tbody").innerHTML = "";
+            document.querySelector("#weather-info").innerHTML = "";           
             clearMap();
         });
 
@@ -141,6 +142,7 @@
             existingMarkers = []; // Reset the markers array
             selectedMarker = null; // Reset the selected marker reference
             document.querySelector("#weather-table tbody").innerHTML = "";
+            document.querySelector("#weather-info").innerHTML = "";
         }    
 
         // Adjust PM2.5 based on RH
