@@ -74,6 +74,18 @@
         #weather-table td {
             padding: 2px 6px;
         }
+        #weather-info table {
+              width: 100%;
+              border-collapse: collapse;
+        }
+        #weather-info th, #weather-info td {
+              padding: 4px;
+              text-align: left;
+        }
+        #weather-info th {
+              background-color: #f0f0f0;
+        }
+
 
     </style>
 </head>
@@ -117,8 +129,10 @@
         
         // Reset button functionality
         document.getElementById('reset-button').addEventListener('click', () => {
+            document.querySelector("#weather-table tbody").innerHTML = "";
             clearMap();
         });
+
         
         // Clear map function
         function clearMap() {
@@ -126,6 +140,7 @@
             existingMarkers.forEach(marker => map.removeLayer(marker));
             existingMarkers = []; // Reset the markers array
             selectedMarker = null; // Reset the selected marker reference
+            document.querySelector("#weather-table tbody").innerHTML = "";
         }    
 
         // Adjust PM2.5 based on RH
@@ -367,7 +382,9 @@
                 fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&hourly=temperature_2m,relative_humidity_2m,precipitation,rain,snowfall,cloudcover,uv_index,wind_speed_10m,wind_direction_10m,wind_gusts_10m,weathercode&timezone=auto`)
                   .then(res => res.json())
                   .then(data => {
-                    const i = data.hourly.time.length - 1;
+                    const now = new Date().toISOString().slice(0, 13); // e.g., "2025-04-03T12"
+                    const i = data.hourly.time.findIndex(t => t.slice(0, 13) === now);
+                              if (i === -1) return;
                     const get = (field) => data.hourly[field][i];
                 
                     const weather = {
@@ -415,8 +432,35 @@
                       ["Wind Direction", `${weather.wind_direction}°`]
                     ];
                 
-                    const tableBody = document.querySelector("#weather-table tbody");
-                    tableBody.innerHTML = rows.map(row => `<tr><td><strong>${row[0]}</strong></td><td>${row[1]}</td></tr>`).join("");
+                        const currentTable = rows.map(row => `<tr><td><strong>${row[0]}</strong></td><td>${row[1]}</td></tr>`).join("");
+                        
+                        // Generate 6-hour forecast table
+                        const forecastRows = [];
+                        for (let j = i + 1; j <= i + 6 && j < data.hourly.time.length; j++) {
+                          const time = data.hourly.time[j].slice(11, 16);
+                          const temp = `${data.hourly.temperature_2m[j]} °C`;
+                          const wind = `${data.hourly.wind_speed_10m[j]} km/h`;
+                          const uv = data.hourly.uv_index[j];
+                          const rain = `${data.hourly.rain[j]} mm`;
+                        
+                          forecastRows.push(`<tr><td>${time}</td><td>${temp}</td><td>${wind}</td><td>${uv}</td><td>${rain}</td></tr>`);
+                        }
+                        
+                        // Set full weather info content in the sidebar
+                        document.querySelector("#weather-info").innerHTML = `
+                          <h3>Current Weather</h3>
+                          <table id="weather-table"><tbody>${currentTable}</tbody></table>
+                          <h4 style="margin-top:15px;">Forecast (Next 6 Hours)</h4>
+                          <table style="font-size:13px;">
+                            <thead>
+                              <tr><th>Time</th><th>Temp</th><th>Wind</th><th>UV</th><th>Rain</th></tr>
+                            </thead>
+                            <tbody>
+                              ${forecastRows.join("")}
+                            </tbody>
+                          </table>
+                        `;
+
                 
                   })
                   .catch(err => {
