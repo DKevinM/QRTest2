@@ -129,12 +129,19 @@
         
         // Reset button functionality
         document.getElementById('reset-button').addEventListener('click', () => {
-        document.querySelector("#weather-info").innerHTML = `
-          <h3>Weather Info</h3>
-          <table id="weather-table">
-            <tbody></tbody>
-          </table>
-        `;         
+        const weatherInfo = document.querySelector("#weather-info");
+        if (weatherInfo) {
+          const table = weatherInfo.querySelector("table");
+          if (table) {
+            const tbody = table.querySelector("tbody");
+            if (tbody) tbody.innerHTML = "";
+          }
+          // Remove any second forecast table if it exists
+          const forecastTable = weatherInfo.querySelector("table:nth-of-type(2)");
+          if (forecastTable) forecastTable.remove();
+          const forecastHeading = weatherInfo.querySelector("h4");
+          if (forecastHeading) forecastHeading.remove();
+        }       
             clearMap();
         });
 
@@ -145,12 +152,19 @@
             existingMarkers.forEach(marker => map.removeLayer(marker));
             existingMarkers = []; // Reset the markers array
             selectedMarker = null; // Reset the selected marker reference
-            document.querySelector("#weather-info").innerHTML = `
-              <h3>Weather Info</h3>
-              <table id="weather-table">
-                <tbody></tbody>
-              </table>
-            `;
+            const weatherInfo = document.querySelector("#weather-info");
+            if (weatherInfo) {
+              const table = weatherInfo.querySelector("table");
+              if (table) {
+                const tbody = table.querySelector("tbody");
+                if (tbody) tbody.innerHTML = "";
+              }
+              // Remove any second forecast table if it exists
+              const forecastTable = weatherInfo.querySelector("table:nth-of-type(2)");
+              if (forecastTable) forecastTable.remove();
+              const forecastHeading = weatherInfo.querySelector("h4");
+              if (forecastHeading) forecastHeading.remove();
+            }
         }    
 
         // Adjust PM2.5 based on RH
