@@ -137,52 +137,53 @@
         });       
 
 
-        async function fetchWeatherData(lat, lon) {
-            const weatherUrl = `https://api.weather.gc.ca/collections/weather-observations/items?bbox=${lon - 0.05},${lat - 0.05},${lon + 0.05},${lat + 0.05}`;
-            const forecastUrl = `https://api.weather.gc.ca/collections/weather-forecasts-hourly/items?lat=${lat}&lon=${lon}`;
 
-            try {
-                const [weatherRes, forecastRes] = await Promise.all([
-                    fetch(weatherUrl),
-                    fetch(forecastUrl)
-                ]);
         
-                const weatherData = await weatherRes.json();
-                const forecastData = await forecastRes.json();
-        
-                // Get closest current weather reading
-                const current = weatherData.features?.[0]?.properties;
-                const forecast = forecastData.features?.[0]?.properties?.periods?.[0];
-        
-                if (current) {
-                    const weatherPopup = L.popup({ maxWidth: 300 })
-                        .setLatLng([lat, lon])
-                        .setContent(`
-                            <strong>Current Weather</strong><br>
-                            Temp: ${current.temperature} °C<br>
-                            Wind: ${current.wind_speed} km/h<br>
-                            Pressure: ${current.pressure} kPa
-                        `)
-                        .openOn(map);
-                }
-        
-                if (forecast) {
-                    const forecastPopup = L.popup({ maxWidth: 300 })
-                        .setLatLng([lat + 0.02, lon]) // Slight offset
-                        .setContent(`
-                            <strong>Hourly Forecast</strong><br>
-                            ${forecast.start_time_local}<br>
-                            Temp: ${forecast.temperature} °C<br>
-                            Wind: ${forecast.wind_speed} km/h<br>
-                            Precip: ${forecast.probability_of_precipitation}%
-                        `)
-                        .openOn(map);
-                }
-        
-            } catch (error) {
-                console.error('Error fetching weather or forecast data:', error);
-            }
+        async function fetchWeatherGCData(lat, lon) {
+    const url = `https://api.weather.gc.ca/collections/point-forecast/items?lat=${lat}&lon=${lon}`;
+
+    try {
+        const res = await fetch(url);
+        const data = await res.json();
+
+        const current = data.properties?.currentConditions;
+        const forecasts = data.properties?.forecastGroup?.periods?.slice(0, 2);
+        const alerts = data.properties?.warnings;
+
+        let content = `<strong>📍 Environment Canada Weather</strong><br>Lat: ${lat.toFixed(2)}, Lon: ${lon.toFixed(2)}<br><br>`;
+
+        if (current) {
+            content += `
+                <strong>🌤️ Now:</strong> ${current.condition}<br>
+                🌡️ Temp: ${current.temperature}°C<br>
+                💨 Wind: ${current.windSpeed} ${current.windDirection}<br><br>
+            `;
         }
+
+        if (forecasts && forecasts.length) {
+            content += `<strong>📅 Forecast:</strong><br>`;
+            forecasts.forEach(f => {
+                content += `🔹 <strong>${f.period}</strong>: ${f.textSummary}<br>`;
+            });
+            content += `<br>`;
+        }
+
+        if (alerts && alerts.length) {
+            alerts.forEach(alert => {
+                content += `<strong style="color:red;">⚠️ ALERT:</strong> ${alert.headline}<br>`;
+            });
+        }
+
+        L.popup({ maxWidth: 300 })
+            .setLatLng([lat + 0.02, lon]) // slight offset
+            .setContent(content)
+            .openOn(map);
+
+    } catch (error) {
+        console.error("❌ Failed to load Environment Canada weather data:", error);
+    }
+}
+
 
 
         
@@ -384,7 +385,7 @@
 
             // Call function to find and display the closest station
             findAndDisplayClosest(lat, lng);
-            fetchWeatherData(lat, lng);
+            fetchWeatherGCData(lat, lng);
         })
         .catch(error => {
             console.error("Error with reverse geocoding:", error);
@@ -405,7 +406,7 @@
             
             // Call function to find and display the closest station
             findAndDisplayClosest(lat, lng);
-            fetchWeatherData(lat, lng);
+            fetchWeatherGCData(lat, lng);
         });
 });
     </script>
