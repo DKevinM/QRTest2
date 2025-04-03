@@ -426,14 +426,6 @@
                       weathercode: get("weathercode")
                     };
                       
-                    const displayTime = new Date(weather.time).toLocaleString('en-CA', {
-                        timeZone: 'auto',
-                        hour: '2-digit',
-                        minute: '2-digit',
-                        day: '2-digit',
-                        month: 'short',
-                        weekday: 'short'
-                    });
                       
                     const weatherCodeMap = {
                       0: "Clear sky", 1: "Mainly clear", 2: "Partly cloudy", 3: "Overcast",
