@@ -53,6 +53,28 @@
             padding: 5px 10px;
             cursor: pointer;
         }
+        #weather-info {
+            position: absolute;
+            top: 60px;
+            right: 10px;
+            width: 300px;
+            background-color: white;
+            border: 1px solid #ccc;
+            padding: 10px;
+            z-index: 1000;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            font-size: 14px;
+        }
+        #weather-info h3 {
+            margin-top: 0;
+            font-size: 16px;
+            text-align: center;
+        }
+        #weather-table td {
+            padding: 2px 6px;
+        }
+
     </style>
 </head>
 <body>
@@ -63,6 +85,13 @@
             <img src="aqhilegend.png" alt="Legend">
         </div>
         <button id="reset-button">Reset Map</button>
+    </div>
+    
+    <div id="weather-info">
+        <h3>Weather Info</h3>
+        <table id="weather-table">
+            <tbody></tbody>
+        </table>
     </div>
 
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
@@ -137,54 +166,66 @@
         });       
 
 
+        fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&hourly=temperature_2m,relative_humidity_2m,precipitation,rain,snowfall,cloudcover,uv_index,wind_speed_10m,wind_direction_10m,wind_gusts_10m,weathercode&timezone=auto`)
+          .then(res => res.json())
+          .then(data => {
+            const i = data.hourly.time.length - 1;
+            const get = (field) => data.hourly[field][i];
+        
+            const weather = {
+              time: data.hourly.time[i],
+              temperature: get("temperature_2m"),
+              humidity: get("relative_humidity_2m"),
+              precipitation: get("precipitation"),
+              rain: get("rain"),
+              snowfall: get("snowfall"),
+              cloudcover: get("cloudcover"),
+              uv: get("uv_index"),
+              wind_speed: get("wind_speed_10m"),
+              wind_direction: get("wind_direction_10m"),
+              wind_gusts: get("wind_gusts_10m"),
+              weathercode: get("weathercode")
+            };
+        
+            const weatherCodeMap = {
+              0: "Clear sky", 1: "Mainly clear", 2: "Partly cloudy", 3: "Overcast",
+              45: "Fog", 48: "Depositing rime fog", 51: "Light drizzle", 53: "Moderate drizzle",
+              55: "Dense drizzle", 56: "Light freezing drizzle", 57: "Dense freezing drizzle",
+              61: "Slight rain", 63: "Moderate rain", 65: "Heavy rain",
+              66: "Light freezing rain", 67: "Heavy freezing rain",
+              71: "Slight snowfall", 73: "Moderate snowfall", 75: "Heavy snowfall",
+              77: "Snow grains", 80: "Slight rain showers", 81: "Moderate rain showers",
+              82: "Violent rain showers", 85: "Slight snow showers", 86: "Heavy snow showers",
+              95: "Thunderstorm", 96: "Thunderstorm w/ slight hail", 99: "Thunderstorm w/ heavy hail"
+            };
+        
+            const desc = weatherCodeMap[weather.weathercode] || "Unknown";
+        
+            // Create the weather info table
+            const rows = [
+              ["Time", weather.time],
+              ["Condition", desc],
+              ["Temperature", `${weather.temperature} °C`],
+              ["Humidity", `${weather.humidity} %`],
+              ["Precipitation", `${weather.precipitation} mm`],
+              ["Rain", `${weather.rain} mm`],
+              ["Snowfall", `${weather.snowfall} cm`],
+              ["Cloud Cover", `${weather.cloudcover} %`],
+              ["UV Index", weather.uv],
+              ["Wind Speed", `${weather.wind_speed} km/h`],
+              ["Wind Gusts", `${weather.wind_gusts} km/h`],
+              ["Wind Direction", `${weather.wind_direction}°`]
+            ];
+        
+            const tableBody = document.querySelector("#weather-table tbody");
+            tableBody.innerHTML = rows.map(row => `<tr><td><strong>${row[0]}</strong></td><td>${row[1]}</td></tr>`).join("");
+        
+          })
+          .catch(err => {
+            console.error("Error fetching weather data:", err);
+          });
 
         
-        async function fetchWeatherGCData(lat, lon) {
-    const url = `https://api.weather.gc.ca/collections/point-forecast/items?lat=${lat}&lon=${lon}`;
-
-    try {
-        const res = await fetch(url);
-        const data = await res.json();
-
-        const current = data.properties?.currentConditions;
-        const forecasts = data.properties?.forecastGroup?.periods?.slice(0, 2);
-        const alerts = data.properties?.warnings;
-
-        let content = `<strong>📍 Environment Canada Weather</strong><br>Lat: ${lat.toFixed(2)}, Lon: ${lon.toFixed(2)}<br><br>`;
-
-        if (current) {
-            content += `
-                <strong>🌤️ Now:</strong> ${current.condition}<br>
-                🌡️ Temp: ${current.temperature}°C<br>
-                💨 Wind: ${current.windSpeed} ${current.windDirection}<br><br>
-            `;
-        }
-
-        if (forecasts && forecasts.length) {
-            content += `<strong>📅 Forecast:</strong><br>`;
-            forecasts.forEach(f => {
-                content += `🔹 <strong>${f.period}</strong>: ${f.textSummary}<br>`;
-            });
-            content += `<br>`;
-        }
-
-        if (alerts && alerts.length) {
-            alerts.forEach(alert => {
-                content += `<strong style="color:red;">⚠️ ALERT:</strong> ${alert.headline}<br>`;
-            });
-        }
-
-        L.popup({ maxWidth: 300 })
-            .setLatLng([lat + 0.02, lon]) // slight offset
-            .setContent(content)
-            .openOn(map);
-
-    } catch (error) {
-        console.error("❌ Failed to load Environment Canada weather data:", error);
-    }
-}
-
-
 
         
         // Fetch combined AQHI station and reading data
@@ -385,7 +426,6 @@
 
             // Call function to find and display the closest station
             findAndDisplayClosest(lat, lng);
-            fetchWeatherGCData(lat, lng);
         })
         .catch(error => {
             console.error("Error with reverse geocoding:", error);
@@ -406,7 +446,6 @@
             
             // Call function to find and display the closest station
             findAndDisplayClosest(lat, lng);
-            fetchWeatherGCData(lat, lng);
         });
 });
     </script>
