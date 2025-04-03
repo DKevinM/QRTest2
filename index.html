@@ -129,8 +129,12 @@
         
         // Reset button functionality
         document.getElementById('reset-button').addEventListener('click', () => {
-            document.querySelector("#weather-table tbody").innerHTML = "";
-            document.querySelector("#weather-info").innerHTML = "";           
+        document.querySelector("#weather-info").innerHTML = `
+          <h3>Weather Info</h3>
+          <table id="weather-table">
+            <tbody></tbody>
+          </table>
+        `;         
             clearMap();
         });
 
@@ -141,8 +145,12 @@
             existingMarkers.forEach(marker => map.removeLayer(marker));
             existingMarkers = []; // Reset the markers array
             selectedMarker = null; // Reset the selected marker reference
-            document.querySelector("#weather-table tbody").innerHTML = "";
-            document.querySelector("#weather-info").innerHTML = "";
+            document.querySelector("#weather-info").innerHTML = `
+              <h3>Weather Info</h3>
+              <table id="weather-table">
+                <tbody></tbody>
+              </table>
+            `;
         }    
 
         // Adjust PM2.5 based on RH
@@ -389,17 +397,8 @@
                               if (i === -1) return;
                     const get = (field) => data.hourly[field][i];
 
-                    const displayTime = new Date(weather.time).toLocaleString('en-CA', {
-                        timeZone: 'auto',
-                        hour: '2-digit',
-                        minute: '2-digit',
-                        day: '2-digit',
-                        month: 'short',
-                        weekday: 'short'
-                    });
-
                     const weather = {
-                      time: displayTime,
+                      time: data.hourly.time[i],
                       temperature: get("temperature_2m"),
                       humidity: get("relative_humidity_2m"),
                       precipitation: get("precipitation"),
@@ -412,7 +411,16 @@
                       wind_gusts: get("wind_gusts_10m"),
                       weathercode: get("weathercode")
                     };
-                
+                      
+                    const displayTime = new Date(weather.time).toLocaleString('en-CA', {
+                        timeZone: 'auto',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        day: '2-digit',
+                        month: 'short',
+                        weekday: 'short'
+                    });
+                      
                     const weatherCodeMap = {
                       0: "Clear sky", 1: "Mainly clear", 2: "Partly cloudy", 3: "Overcast",
                       45: "Fog", 48: "Depositing rime fog", 51: "Light drizzle", 53: "Moderate drizzle",
