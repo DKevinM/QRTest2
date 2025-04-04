@@ -442,6 +442,7 @@
                       wind_direction: get("wind_direction_10m"),
                       wind_gusts: get("wind_gusts_10m"),
                       weathercode: get("weathercode")
+                    };
                         // Convert weather.time to a Date object
                         const utcDate = new Date(weather.time);
                         // Subtract 6 hours to get local Alberta time (MST/MDT)
@@ -458,7 +459,7 @@
                         });
                         // Update the weather object to show clean time
                         weather.time = displayTime;
-                    };
+                   
                       
                     const weatherCodeMap = {
                       0: "Clear sky", 1: "Mainly clear", 2: "Partly cloudy", 3: "Overcast",
