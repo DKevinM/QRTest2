@@ -500,13 +500,8 @@
                         // Generate 6-hour forecast table
                         const forecastRows = [];
                         for (let j = i + 1; j <= i + 6 && j < data.hourly.time.length; j++) {
-                          const utcDate = new Date(data.hourly.time[j] + "Z");
-                        
-                          // Subtract 6 hours from UTC to approximate MST/MDT
-                          const localTimestamp = utcDate.getTime() - 6 * 60 * 60 * 1000;
-                          const localDate = new Date(localTimestamp);
-                        
-                          // Format manually
+                          // Use local time as-is from the API
+                          const localDate = new Date(data.hourly.time[j]);
                           const localHour = String(localDate.getHours()).padStart(2, '0');
                           const localMin = String(localDate.getMinutes()).padStart(2, '0');
                           const localTime = `${localHour}:${localMin}`;
