@@ -501,11 +501,12 @@
                         const forecastRows = [];
                         for (let j = i + 1; j <= i + 6 && j < data.hourly.time.length; j++) {
                           const utcDate = new Date(data.hourly.time[j]);
-                                const localTime = utcDate.toLocaleTimeString('en-CA', {
+                                const localTime = utcDate.toLocaleString('en-CA', {
+                                  timeZone: 'America/Edmonton',
+                                  weekday: 'short',
                                   hour: '2-digit',
                                   minute: '2-digit',
-                                  hour12: false,
-                                  timeZone: 'America/Edmonton'
+                                  hour12: false
                                 });
                           const temp = `${data.hourly.temperature_2m[j]} °C`;
                           const wind = `${data.hourly.wind_speed_10m[j]} km/h`;
