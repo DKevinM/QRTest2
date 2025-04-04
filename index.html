@@ -425,15 +425,16 @@
                   .then(res => res.json())
                   .then(data => {
                     // Convert current time to local and format to match the Open-Meteo hourly format
+                    // Get current time in Edmonton and format like the API times
                     const now = new Date();
-                    const edmontonOffsetNow = new Date(now.toLocaleString("en-US", { timeZone: "America/Edmonton" }));
-                    const currentHourStr = edmontonOffsetNow.toISOString().slice(0, 13);
+                    const edmontonNow = new Date(now.toLocaleString("en-US", { timeZone: "America/Edmonton" }));
                     
-                    // Find the index
-                    const i = data.hourly.time.findIndex(t => t.slice(0, 13) === currentHourStr);
-                    if (i === -1) {
-                      console.warn("Current hour not found in forecast data.");
-                      return;
+                    // Find the closest index >= current local hour
+                    let i = 0;
+                    while (i < data.hourly.time.length) {
+                      const t = new Date(data.hourly.time[i]);
+                      if (t >= edmontonNow) break;
+                      i++;
                     }
                     
                     const get = (field) => data.hourly[field][i];
