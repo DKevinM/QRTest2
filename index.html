@@ -41,7 +41,7 @@
         }
         .legend img {
             width: 100%;
-            max-width: 400px;
+            max-width: 300px;
         }
         #reset-button {
             position: absolute;
@@ -424,6 +424,17 @@
                       wind_direction: get("wind_direction_10m"),
                       wind_gusts: get("wind_gusts_10m"),
                       weathercode: get("weathercode")
+                        // Format time for Alberta (manually -6 hrs)
+                        const localDate = new Date(new Date(weather.time).getTime() - 6 * 60 * 60 * 1000);
+                        const displayTime = localDate.toLocaleString('en-CA', {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            day: '2-digit',
+                            month: 'short',
+                            weekday: 'short',
+                            hour12: false
+                        });
+                        weather.time = displayTime;
                     };
                       
                       
