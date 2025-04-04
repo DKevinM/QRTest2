@@ -429,10 +429,16 @@
                     const edmontonOffsetNow = new Date(now.toLocaleString("en-US", { timeZone: "America/Edmonton" }));
                     const currentHourStr = edmontonOffsetNow.toISOString().slice(0, 13);
                     
-                    // Find the correct index in the forecast data based on local time
+                    // Find the index
                     const i = data.hourly.time.findIndex(t => t.slice(0, 13) === currentHourStr);
+                    if (i === -1) {
+                      console.warn("Current hour not found in forecast data.");
+                      return;
+                    }
+                    
+                    const get = (field) => data.hourly[field][i];
 
-                    const weather = {
+                    const weather = {                    
                       time: data.hourly.time[i],
                       temperature: get("temperature_2m"),
                       humidity: get("relative_humidity_2m"),
@@ -448,9 +454,7 @@
                     };
                         // Convert weather.time to a Date object
                         const utcDate = new Date(weather.time);
-                        // Subtract 6 hours to get local Alberta time (MST/MDT)
                         const localDate = new Date(utcDate.getTime() - 6 * 60 * 60 * 1000);
-                        // Format as a clean string without the "T"
                         const displayTime = localDate.toLocaleString('en-CA', {
                             weekday: 'short',
                             year: 'numeric',
