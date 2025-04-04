@@ -41,7 +41,7 @@
         }
         .legend img {
             width: 100%;
-            max-width: 300px;
+            max-width: 200px;
         }
         #reset-button {
             position: absolute;
@@ -84,6 +84,15 @@
         }
         #weather-info th {
               background-color: #f0f0f0;
+        }
+        .wind-arrow {
+              display: inline-block;
+              transform: rotate(0deg); /* default */
+              transition: transform 0.3s ease;
+              width: 20px;
+              height: 20px;
+              vertical-align: middle;
+              margin-left: 5px;
         }
 
 
@@ -205,6 +214,15 @@
         });       
 
 
+        function getWindDirectionLabel(deg) {
+            const directions = ["N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE",
+                                "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW"];
+            const index = Math.round(deg / 22.5) % 16;
+            return directions[index];
+        }
+
+
+        
         // Fetch combined AQHI station and reading data
         async function fetchCombinedAQHIData() {
             const stationUrl = 'https://data.environment.alberta.ca/EdwServices/aqhi/odata/Stations';
@@ -424,19 +442,23 @@
                       wind_direction: get("wind_direction_10m"),
                       wind_gusts: get("wind_gusts_10m"),
                       weathercode: get("weathercode")
-                        // Format time for Alberta (manually -6 hrs)
-                        const localDate = new Date(new Date(weather.time).getTime() - 6 * 60 * 60 * 1000);
+                        // Convert weather.time to a Date object
+                        const utcDate = new Date(weather.time);
+                        // Subtract 6 hours to get local Alberta time (MST/MDT)
+                        const localDate = new Date(utcDate.getTime() - 6 * 60 * 60 * 1000);
+                        // Format as a clean string without the "T"
                         const displayTime = localDate.toLocaleString('en-CA', {
+                            weekday: 'short',
+                            year: 'numeric',
+                            month: 'short',
+                            day: '2-digit',
                             hour: '2-digit',
                             minute: '2-digit',
-                            day: '2-digit',
-                            month: 'short',
-                            weekday: 'short',
                             hour12: false
                         });
+                        // Update the weather object to show clean time
                         weather.time = displayTime;
                     };
-                      
                       
                     const weatherCodeMap = {
                       0: "Clear sky", 1: "Mainly clear", 2: "Partly cloudy", 3: "Overcast",
@@ -465,7 +487,11 @@
                       ["UV Index", weather.uv],
                       ["Wind Speed", `${weather.wind_speed} km/h`],
                       ["Wind Gusts", `${weather.wind_gusts} km/h`],
-                      ["Wind Direction", `${weather.wind_direction}°`]
+                      ["Wind Direction", `
+                              ${weather.wind_direction}° (from ${getWindDirectionLabel(weather.wind_direction)})
+                              <span class="wind-arrow" style="transform: rotate(${weather.wind_direction}deg);">↑</span>
+                        `]
+
                     ];
                 
                         const currentTable = rows.map(row => `<tr><td><strong>${row[0]}</strong></td><td>${row[1]}</td></tr>`).join("");
