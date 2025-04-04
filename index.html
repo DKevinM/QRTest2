@@ -426,12 +426,11 @@
                   .then(data => {
                     // Convert current time to local and format to match the Open-Meteo hourly format
                     const now = new Date();
-                    const localNow = new Date(now.toLocaleString('en-US', { timeZone: 'America/Edmonton' }));
-                    const currentHourStr = localNow.toISOString().slice(0, 13); // e.g., "2025-04-04T13"
+                    const edmontonOffsetNow = new Date(now.toLocaleString("en-US", { timeZone: "America/Edmonton" }));
+                    const currentHourStr = edmontonOffsetNow.toISOString().slice(0, 13);
                     
                     // Find the correct index in the forecast data based on local time
                     const i = data.hourly.time.findIndex(t => t.slice(0, 13) === currentHourStr);
-
 
                     const weather = {
                       time: data.hourly.time[i],
