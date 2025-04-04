@@ -453,8 +453,8 @@
                       weathercode: get("weathercode")
                     };
                         // Convert weather.time to a Date object
-                    const localNow = new Date().toLocaleString('en-CA', { timeZone: 'America/Edmonton' });
-                    weather.time = new Date(localNow).toLocaleString('en-CA', {
+                    weather.time = new Date().toLocaleString('en-CA', {
+                      timeZone: 'America/Edmonton',
                       weekday: 'short',
                       year: 'numeric',
                       month: 'short',
@@ -463,8 +463,6 @@
                       minute: '2-digit',
                       hour12: false
                     });
-                        // Update the weather object to show clean time
-                        weather.time = displayNow;
                    
                       
                     const weatherCodeMap = {
