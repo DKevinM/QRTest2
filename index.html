@@ -41,7 +41,7 @@
         }
         .legend img {
             width: 100%;
-            max-width: 200px;
+            max-width: 250px;
         }
         #reset-button {
             position: absolute;
@@ -500,13 +500,19 @@
                         // Generate 6-hour forecast table
                         const forecastRows = [];
                         for (let j = i + 1; j <= i + 6 && j < data.hourly.time.length; j++) {
-                          const time = data.hourly.time[j].slice(11, 16);
+                          const utcDate = new Date(data.hourly.time[j]);
+                                const localTime = utcDate.toLocaleTimeString('en-CA', {
+                                  hour: '2-digit',
+                                  minute: '2-digit',
+                                  hour12: false,
+                                  timeZone: 'America/Edmonton'
+                                });
                           const temp = `${data.hourly.temperature_2m[j]} °C`;
                           const wind = `${data.hourly.wind_speed_10m[j]} km/h`;
                           const uv = data.hourly.uv_index[j];
                           const rain = `${data.hourly.rain[j]} mm`;
                         
-                          forecastRows.push(`<tr><td>${time}</td><td>${temp}</td><td>${wind}</td><td>${uv}</td><td>${rain}</td></tr>`);
+                          forecastRows.push(`<tr><td>${localTime}</td><td>${temp}</td><td>${wind}</td><td>${uv}</td><td>${rain}</td></tr>`);
                         }
                         
                         // Set full weather info content in the sidebar
