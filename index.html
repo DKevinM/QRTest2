@@ -500,13 +500,17 @@
                         // Generate 6-hour forecast table
                         const forecastRows = [];
                         for (let j = i + 1; j <= i + 6 && j < data.hourly.time.length; j++) {
-                          const utcDate = new Date(data.hourly.time[j] + "Z"); // force UTC
-                          const localTime = utcDate.toLocaleTimeString('en-CA', {
-                            hour: '2-digit',
-                            minute: '2-digit',
-                            hour12: false,
-                            timeZone: 'America/Edmonton'
-                          });
+                          const utcDate = new Date(data.hourly.time[j] + "Z");
+                        
+                          // Subtract 6 hours from UTC to approximate MST/MDT
+                          const localTimestamp = utcDate.getTime() - 6 * 60 * 60 * 1000;
+                          const localDate = new Date(localTimestamp);
+                        
+                          // Format manually
+                          const localHour = String(localDate.getHours()).padStart(2, '0');
+                          const localMin = String(localDate.getMinutes()).padStart(2, '0');
+                          const localTime = `${localHour}:${localMin}`;
+                        
                           const temp = `${data.hourly.temperature_2m[j]} °C`;
                           const wind = `${data.hourly.wind_speed_10m[j]} km/h`;
                           const uv = data.hourly.uv_index[j];
@@ -514,6 +518,7 @@
                         
                           forecastRows.push(`<tr><td>${localTime}</td><td>${temp}</td><td>${wind}</td><td>${uv}</td><td>${rain}</td></tr>`);
                         }
+
                         
                         // Set full weather info content in the sidebar
                         document.querySelector("#weather-info").innerHTML = `
