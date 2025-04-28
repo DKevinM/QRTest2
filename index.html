@@ -177,7 +177,7 @@
         }    
 
         // Adjust PM2.5 based on RH
-        function adjustPM25(PM25, RH) {
+        function adjustPM25(RH, PM25) {
             if (RH === null || isNaN(RH)) RH = 50; // Default RH to 50 if not available
             if (RH < 30) {
                 return PM25 / (1 + (0.24 / (100 / 30 - 1)));
