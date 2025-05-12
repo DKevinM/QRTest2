@@ -351,7 +351,7 @@
                   "Total Hydrocarbons": "ppm", "Carbon Monoxide": "ppm", "Wind Direction": "°",
                   "Relative Humidity": "%", "Outdoor Temperature": "°C", "Nitric Oxide": "ppb",
                   "Wind Speed": "km/hr", "Non-methane Hydrocarbons": "ppm", "Nitrogen Dioxide": "ppb",
-                  "Methane": "ppm", "AQHI": "AQHI"
+                  "Methane": "ppm"
                 };
             
                 const abbrMap = {
@@ -360,11 +360,11 @@
                   "Total Hydrocarbons": "THC", "Carbon Monoxide": "CO", "Wind Direction": "WD",
                   "Relative Humidity": "RH", "Outdoor Temperature": "ET", "Nitric Oxide": "NO",
                   "Wind Speed": "WS", "Non-methane Hydrocarbons": "NMHC", "Nitrogen Dioxide": "NO₂",
-                  "Methane": "CH₄", "AQHI": "AQHI"
+                  "Methane": "CH₄"
                 };
             
                 const sortedOrder = [
-                  "AQHI", "Fine Particulate Matter", "Ozone", "Nitrogen Dioxide", "Total Oxides of Nitrogen",
+                  "Fine Particulate Matter", "Ozone", "Nitrogen Dioxide", "Total Oxides of Nitrogen",
                   "Nitric Oxide", "Sulphur Dioxide", "Hydrogen Sulphide", "Total Reduced Sulphur",
                   "Carbon Monoxide", "Total Hydrocarbons", "Methane", "Non-methane Hydrocarbons",
                   "Outdoor Temperature", "Relative Humidity", "Wind Speed", "Wind Direction"
@@ -384,8 +384,7 @@
                   } else {
                     value = isNaN(value) ? row.Value : value.toFixed(1);
                   }
-                  if (row.ParameterName === "AQHI" && parseFloat(value) > 10) value = "10+";
-            
+           
                   if (!values.length) {
                     marker.bindPopup(`<b>${station}</b><br>No data available.`).openPopup();
                     return;
