@@ -329,69 +329,6 @@
             return "#01cbff"; // Low PM2.5
         }
 
-        // Find and display closest sensors and stations
-        async function findAndDisplayClosest(lat, lng) {
-            const aqhiStations = await fetchCombinedAQHIData();
-            const purpleAirSensors = await fetchPurpleAirData();
-
-            // Add selected marker
-            // selectedMarker = L.marker([lat, lng]).addTo(map).bindPopup(`Selected Location<br>Latitude: ${lat.toFixed(5)}, Longitude: ${lng.toFixed(5)}`).openPopup();
-            // existingMarkers.push(selectedMarker); // Track the selected marker
-
-            // Find closest AQHI station
-            let closestAQHIStation = null;
-            let minAQHIDistance = Infinity;
-            aqhiStations.forEach(station => {
-                const distance = getDistance(lat, lng, station.lat, station.lon);
-                if (distance < minAQHIDistance) {
-                    minAQHIDistance = distance;
-                    closestAQHIStation = station;
-                }
-                return closestAQHIStation.name;
-            });
-
-            // Find closest PurpleAir sensor
-            let closestPurpleAirSensor = null;
-            let minPurpleAirDistance = Infinity;
-            purpleAirSensors.forEach(sensor => {
-                const distance = getDistance(lat, lng, sensor.lat, sensor.lon);
-                if (distance < minPurpleAirDistance) {
-                    minPurpleAirDistance = distance;
-                    closestPurpleAirSensor = sensor;
-                }
-            });
-
-            // Display closest AQHI station
-            if (closestAQHIStation) {
-                const { lat: stationLat, lon: stationLon, name, aqhi } = closestAQHIStation;
-                const stationMarker = L.circleMarker([stationLat, stationLon], {
-                    radius: 15,
-                    fillColor: getAQHIColor(aqhi),
-                    color: getAQHIColor(aqhi),
-                    weight: 3,
-                    fillOpacity: 0.8,
-                }).addTo(map).bindPopup(
-                    `<strong>Closest AQHI Station</strong><br>${name}<br>AQHI: ${aqhi}<br>Distance: ${(minAQHIDistance / 1000).toFixed(2)} km`
-                );
-                existingMarkers.push(stationMarker);
-            }
-
-            // Display closest PurpleAir sensor
-            if (closestPurpleAirSensor) {
-                const { lat: sensorLat, lon: sensorLon, name: sensorName, pm25 } = closestPurpleAirSensor;
-                const sensorMarker = L.circleMarker([sensorLat, sensorLon], {
-                    radius: 8,
-                    fillColor: getPM25Color(pm25),
-                    color: getPM25Color(pm25),
-                    weight: 1,
-                    fillOpacity: 0.8,
-                }).addTo(map).bindPopup(
-                    `<strong>Closest PurpleAir Sensor</strong><br>${sensorName}<br>PM2.5: ${pm25.toFixed(1)} µg/m³<br>Distance: ${(minPurpleAirDistance / 1000).toFixed(2)} km`
-                );
-                existingMarkers.push(sensorMarker);
-            }
-
-
             async function fetchRecentStationData(stationName) {
               const now = new Date();
               const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000); // 1 hour ago
@@ -476,6 +413,71 @@
               }
             }
         }
+        
+        // Find and display closest sensors and stations
+        async function findAndDisplayClosest(lat, lng) {
+            const aqhiStations = await fetchCombinedAQHIData();
+            const purpleAirSensors = await fetchPurpleAirData();
+
+            // Add selected marker
+            // selectedMarker = L.marker([lat, lng]).addTo(map).bindPopup(`Selected Location<br>Latitude: ${lat.toFixed(5)}, Longitude: ${lng.toFixed(5)}`).openPopup();
+            // existingMarkers.push(selectedMarker); // Track the selected marker
+
+            // Find closest AQHI station
+            let closestAQHIStation = null;
+            let minAQHIDistance = Infinity;
+            aqhiStations.forEach(station => {
+                const distance = getDistance(lat, lng, station.lat, station.lon);
+                if (distance < minAQHIDistance) {
+                    minAQHIDistance = distance;
+                    closestAQHIStation = station;
+                }
+                return closestAQHIStation.name;
+            });
+
+            // Find closest PurpleAir sensor
+            let closestPurpleAirSensor = null;
+            let minPurpleAirDistance = Infinity;
+            purpleAirSensors.forEach(sensor => {
+                const distance = getDistance(lat, lng, sensor.lat, sensor.lon);
+                if (distance < minPurpleAirDistance) {
+                    minPurpleAirDistance = distance;
+                    closestPurpleAirSensor = sensor;
+                }
+            });
+
+            // Display closest AQHI station
+            if (closestAQHIStation) {
+                const { lat: stationLat, lon: stationLon, name, aqhi } = closestAQHIStation;
+                const stationMarker = L.circleMarker([stationLat, stationLon], {
+                    radius: 15,
+                    fillColor: getAQHIColor(aqhi),
+                    color: getAQHIColor(aqhi),
+                    weight: 3,
+                    fillOpacity: 0.8,
+                }).addTo(map).bindPopup(
+                    `<strong>Closest AQHI Station</strong><br>${name}<br>AQHI: ${aqhi}<br>Distance: ${(minAQHIDistance / 1000).toFixed(2)} km`
+                );
+                existingMarkers.push(stationMarker);
+            }
+
+            // Display closest PurpleAir sensor
+            if (closestPurpleAirSensor) {
+                const { lat: sensorLat, lon: sensorLon, name: sensorName, pm25 } = closestPurpleAirSensor;
+                const sensorMarker = L.circleMarker([sensorLat, sensorLon], {
+                    radius: 8,
+                    fillColor: getPM25Color(pm25),
+                    color: getPM25Color(pm25),
+                    weight: 1,
+                    fillOpacity: 0.8,
+                }).addTo(map).bindPopup(
+                    `<strong>Closest PurpleAir Sensor</strong><br>${sensorName}<br>PM2.5: ${pm25.toFixed(1)} µg/m³<br>Distance: ${(minPurpleAirDistance / 1000).toFixed(2)} km`
+                );
+                existingMarkers.push(sensorMarker);
+            }
+
+
+
 
     // Map click event
     map.on('click', async function (e) {
