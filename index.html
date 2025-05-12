@@ -464,31 +464,38 @@ async function fetchRecentStationData(stationName) {
 
     // Map click event
     map.on('click', function (e) {
-        const lat = e.latlng.lat;
-        const lng = e.latlng.lng;
-		
-	  const aqhiStations = await fetchCombinedAQHIData();
-	  let closestStation = null;
-	  let minDist = Infinity;														   
-										  
-	  aqhiStations.forEach(station => {
-	    const dist = getDistance(lat, lng, station.lat, station.lon);
-	    if (dist < minDist) {
-	      minDist = dist;
-	      closestStation = station;
+	  try {
+	    const lat = e.latlng.lat;
+	    const lng = e.latlng.lng;
+	
+	    const aqhiStations = await fetchCombinedAQHIData();
+	    if (!aqhiStations || !Array.isArray(aqhiStations)) throw new Error("AQHI station data invalid.");
+	
+	    let closestStation = null;
+	    let minDist = Infinity;
+	
+	    aqhiStations.forEach(station => {
+	      const dist = getDistance(lat, lng, station.lat, station.lon);
+	      if (dist < minDist) {
+	        minDist = dist;
+	        closestStation = station;
+	      }
+	    });
+	
+	    if (closestStation) {
+	      const stationName = closestStation.name;
+	      const html = await fetchRecentStationData(stationName);
+	
+	      L.popup()
+	        .setLatLng([lat, lng])
+	        .setContent(`<strong>${stationName}</strong><br>${html}`)
+	        .openOn(map);
 	    }
-	  });								   
-	
-	  if (closestStation) {
-	    const stationName = closestStation.name;
-	    const html = await fetchRecentStationData(stationName);
-	
-	    L.popup()
-	      .setLatLng([lat, lng])
-	      .setContent(`<strong>${stationName}</strong><br>${html}`)
-	      .openOn(map);
+	  } catch (err) {
+	    console.error("Map click handler error:", err);
+	    alert("An error occurred when loading station data. Please try again.");
 	  }
-	});										 
+	});						 
 																		 
 
     // Clear the map before adding new markers
