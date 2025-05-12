@@ -389,29 +389,32 @@
                     marker.bindPopup(`<b>${station}</b><br>No data available.`).openPopup();
                     return;
                   }
-                      // Group data by ParameterName and show most recent reading
-                      const latestByParam = {};
-                      values.forEach(row => {
-                        if (!latestByParam[row.ParameterName]) {
-                          latestByParam[row.ParameterName] = row;
-                        }
-                      });
+                  // Group data by ParameterName and show most recent reading
+                  const latestByParam = {};
+                    data.forEach(row => {
+                      if (!latestByParam[row.ParameterName]) {
+                        latestByParam[row.ParameterName] = row;
+                      }
+                    });
 
-                table += "</tbody></table>";
-            
-                  const rows = Object.values(latestByParam)
-                    .map(row =>
-                      `<b>${row.ParameterName}:</b> ${parseFloat(row.Value).toFixed(2)}<br>`
-                    ).join("");
-                
-                  const popupHtml = `<b>${station}</b><br>${rows}`;
-                  marker.bindPopup(popupHtml).openPopup();
-              } catch (e) {
-                console.error("Fetch error:", e);
-                return "<b>Error retrieving data.</b>";
+                    const rows = Object.values(latestByParam)
+                      .map(row => {
+                        let val = parseFloat(row.Value);
+                        if (!isNaN(val)) val = val.toFixed(2);
+                        else val = row.Value;
+                        return `<tr><td>${row.ParameterName}</td><td>${val}</td><td>${unitMap[row.ParameterName] || ""}</td></tr>`;
+                      })
+                      .join("");
+                    
+                    return `
+                      <table style="width:100%;font-size:0.9em;">
+                        <thead><tr><th>Parameter</th><th>Value</th><th>Unit</th></tr></thead>
+                        <tbody>${rows}</tbody>
+                      </table>`;
               }
             }
-        }
+         }
+        
         
         // Find and display closest sensors and stations
         async function findAndDisplayClosest(lat, lng) {
@@ -431,7 +434,7 @@
                     minAQHIDistance = distance;
                     closestAQHIStation = station;
                 }
-                return closestAQHIStation.name;
+                return closestAQHIStation.name
             });
 
             // Find closest PurpleAir sensor
@@ -474,6 +477,7 @@
                 );
                 existingMarkers.push(sensorMarker);
             }
+        }
 
 
 
