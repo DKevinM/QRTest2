@@ -331,9 +331,6 @@
 
         
 async function fetchRecentStationData(stationName) {
-  const now = new Date();
-  const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000); // 1 hour ago
-  const isoTime = oneHourAgo.toISOString().split('.')[0] + "-06:00"; // Alberta offset
 
   const baseURL = "https://data.environment.alberta.ca/EdwServices/aqhi/odata/StationMeasurements";
   const query = `$filter=StationName eq '${stationName}' AND ReadingDate gt ${isoTime}&$orderby=ReadingDate desc&$select=StationName,ParameterName,ReadingDate,Value&$format=json`;
@@ -344,7 +341,8 @@ async function fetchRecentStationData(stationName) {
     const json = await response.json();
     const data = json.value;
 
-    if (!data.length) return "<b>No recent data found for this station.</b>";
+    // Format into HTML table
+    let table = `<table style="width:100%;font-size:0.9em;"><thead><tr><th>Parameter</th><th>Value</th><th>Unit</th></tr></thead><tbody>`;
 
     const unitMap = {
       "Ozone": "ppb", "Total Oxides of Nitrogen": "ppb", "Hydrogen Sulphide": "ppb",
@@ -362,18 +360,10 @@ async function fetchRecentStationData(stationName) {
       "Outdoor Temperature", "Relative Humidity", "Wind Speed", "Wind Direction"
     ];
 
-    const latestByParam = {};
-    data.forEach(row => {
-      if (!latestByParam[row.ParameterName]) {
-        latestByParam[row.ParameterName] = row;
-      }
-    });
-
-    const sortedData = sortedOrder
-      .map(name => latestByParam[name])
-      .filter(row => row !== undefined);
-
-    let table = `<table style="width:100%;font-size:0.9em;"><thead><tr><th>Parameter</th><th>Value</th><th>Unit</th></tr></thead><tbody>`;
+    const sortedData = Object.values(latestByParam).sort(
+      (a, b) => sortedOrder.indexOf(a.ParameterName) - sortedOrder.indexOf(b.ParameterName)
+    );
+	  
 
     sortedData.forEach(row => {
       let value = parseFloat(row.Value);
