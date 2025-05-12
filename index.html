@@ -100,7 +100,7 @@
 </head>
 <body>
     <div id="map-container">
-      <div id="map" style="flex: 1;"></div>
+        <div id="map"></div>
         <button id="location-button">Zoom to My Current Location</button>
         <div class="legend">
             <img src="aqhilegend.png" alt="Legend">
@@ -453,11 +453,27 @@
                   }
                   if (row.ParameterName === "AQHI" && parseFloat(value) > 10) value = "10+";
             
-                  table += `<tr><td>${abbrMap[row.ParameterName] || row.ParameterName}</td><td>${value}</td><td>${unitMap[row.ParameterName] || ""}</td></tr>`;
-                });
+                  if (!values.length) {
+                    marker.bindPopup(`<b>${station}</b><br>No data available.`).openPopup();
+                    return;
+                  }
+                      // Group data by ParameterName and show most recent reading
+                      const latestByParam = {};
+                      values.forEach(row => {
+                        if (!latestByParam[row.ParameterName]) {
+                          latestByParam[row.ParameterName] = row;
+                        }
+                      });
+
                 table += "</tbody></table>";
             
-                return table;
+                  const rows = Object.values(latestByParam)
+                    .map(row =>
+                      `<b>${row.ParameterName}:</b> ${parseFloat(row.Value).toFixed(2)}<br>`
+                    ).join("");
+                
+                  const popupHtml = `<b>${station}</b><br>${rows}`;
+                  marker.bindPopup(popupHtml).openPopup();
               } catch (e) {
                 console.error("Fetch error:", e);
                 return "<b>Error retrieving data.</b>";
