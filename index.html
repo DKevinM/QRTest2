@@ -100,7 +100,7 @@
 </head>
 <body>
     <div id="map-container">
-        <div id="map"></div>
+      <div id="map" style="flex: 1;"></div>
         <button id="location-button">Zoom to My Current Location</button>
         <div class="legend">
             <img src="aqhilegend.png" alt="Legend">
@@ -115,6 +115,12 @@
         </table>
     </div>
 
+    <div style="display: flex; height: 100vh;">
+      <div id="sidebar" style="width: 300px; padding: 10px; overflow-y: auto; border-right: 1px solid #ccc;">
+        <h3>Station Info</h3>
+        <div id="station-table">station on the map</div>
+      </div>
+    
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
     <script>
         const map = L.map('map').setView([53.535645, -113.47194], 8);
@@ -463,6 +469,10 @@
     map.on('click', function (e) {
         const lat = e.latlng.lat;
         const lng = e.latlng.lng;
+        const stationName = stationName;
+        const html = await fetchRecentStationData(stationName);
+        document.getElementById("station-table").innerHTML = `<strong>${stationName}</strong><br>${html}`;
+});
 
     // Clear the map before adding new markers
     clearMap();
