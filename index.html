@@ -388,6 +388,75 @@
                 );
                 existingMarkers.push(sensorMarker);
             }
+
+
+            async function fetchRecentStationData(stationName) {
+              const now = new Date();
+              const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000); // 1 hour ago
+              const isoTime = oneHourAgo.toISOString().split('.')[0] + "-06:00"; // Alberta offset
+            
+              const baseURL = "https://data.environment.alberta.ca/EdwServices/aqhi/odata/StationMeasurements";
+              const query = `$filter=StationName eq '${stationName}' AND ReadingDate gt ${isoTime}&$orderby=ReadingDate desc&$select=StationName,ParameterName,ReadingDate,Value&$format=json`;
+              const url = `${baseURL}?${encodeURI(query)}`;
+            
+              try {
+                const response = await fetch(url);
+                const json = await response.json();
+                const data = json.value;
+            
+                if (data.length === 0) return "<b>No recent data found for this station.</b>";
+            
+                const unitMap = {
+                  "Ozone": "ppb", "Total Oxides of Nitrogen": "ppb", "Hydrogen Sulphide": "ppb",
+                  "Total Reduced Sulphur": "ppb", "Sulphur Dioxide": "ppb", "Fine Particulate Matter": "µg/m³",
+                  "Total Hydrocarbons": "ppm", "Carbon Monoxide": "ppm", "Wind Direction": "°",
+                  "Relative Humidity": "%", "Outdoor Temperature": "°C", "Nitric Oxide": "ppb",
+                  "Wind Speed": "km/hr", "Non-methane Hydrocarbons": "ppm", "Nitrogen Dioxide": "ppb",
+                  "Methane": "ppm", "AQHI": "AQHI"
+                };
+            
+                const abbrMap = {
+                  "Ozone": "O₃", "Total Oxides of Nitrogen": "NOx", "Hydrogen Sulphide": "H₂S",
+                  "Total Reduced Sulphur": "TRS", "Sulphur Dioxide": "SO₂", "Fine Particulate Matter": "PM2.5",
+                  "Total Hydrocarbons": "THC", "Carbon Monoxide": "CO", "Wind Direction": "WD",
+                  "Relative Humidity": "RH", "Outdoor Temperature": "ET", "Nitric Oxide": "NO",
+                  "Wind Speed": "WS", "Non-methane Hydrocarbons": "NMHC", "Nitrogen Dioxide": "NO₂",
+                  "Methane": "CH₄", "AQHI": "AQHI"
+                };
+            
+                const sortedOrder = [
+                  "AQHI", "Fine Particulate Matter", "Ozone", "Nitrogen Dioxide", "Total Oxides of Nitrogen",
+                  "Nitric Oxide", "Sulphur Dioxide", "Hydrogen Sulphide", "Total Reduced Sulphur",
+                  "Carbon Monoxide", "Total Hydrocarbons", "Methane", "Non-methane Hydrocarbons",
+                  "Outdoor Temperature", "Relative Humidity", "Wind Speed", "Wind Direction"
+                ];
+            
+                const sortedData = data.sort((a, b) =>
+                  sortedOrder.indexOf(a.ParameterName) - sortedOrder.indexOf(b.ParameterName)
+                );
+            
+                // Format into HTML table
+                let table = `<table style="width:100%;font-size:0.9em;"><thead><tr><th>Parameter</th><th>Value</th><th>Unit</th></tr></thead><tbody>`;
+                sortedData.forEach(row => {
+                  let value = parseFloat(row.Value);
+                  if (["Ozone", "Total Oxides of Nitrogen", "Hydrogen Sulphide", "Total Reduced Sulphur",
+                       "Sulphur Dioxide", "Nitric Oxide", "Nitrogen Dioxide"].includes(row.ParameterName)) {
+                    value = (value * 1000).toFixed(1);
+                  } else {
+                    value = isNaN(value) ? row.Value : value.toFixed(1);
+                  }
+                  if (row.ParameterName === "AQHI" && parseFloat(value) > 10) value = "10+";
+            
+                  table += `<tr><td>${abbrMap[row.ParameterName] || row.ParameterName}</td><td>${value}</td><td>${unitMap[row.ParameterName] || ""}</td></tr>`;
+                });
+                table += "</tbody></table>";
+            
+                return table;
+              } catch (e) {
+                console.error("Fetch error:", e);
+                return "<b>Error retrieving data.</b>";
+              }
+            }
         }
 
     // Map click event
