@@ -500,8 +500,7 @@
         });
         
         if (closestStation) {
-            const stationName = closestStation.name;
-            const html = await fetchRecentStationData(stationName);
+            const html = await fetchRecentStationData(closestStation.name);
             L.popup()
               .setLatLng([lat, lng])
               .setContent(`<strong>${stationName}</strong><br>${html}`)
