@@ -117,6 +117,88 @@
 
 	
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+
+	<script>
+	// Add this function at the global level
+	async function fetchRecentStationData(stationName) {
+	    const baseURL = "https://data.environment.alberta.ca/EdwServices/aqhi/odata/StationMeasurements";
+	    const query = `$filter=StationName eq '${stationName}'&$orderby=ReadingDate desc&$top=50&$format=json`;
+	    const url = `${baseURL}?${encodeURI(query)}`;
+	
+	    try {
+	        const response = await fetch(url);
+	        const json = await response.json();
+	        const data = json.value;
+	
+	        if (!data.length) return "<b>No recent data found for this station.</b>";
+	
+	        const unitMap = {
+	            "Ozone": "ppb", "Total Oxides of Nitrogen": "ppb", "Hydrogen Sulphide": "ppb",
+	            "Total Reduced Sulphur": "ppb", "Sulphur Dioxide": "ppb", "Fine Particulate Matter": "µg/m³",
+	            "Total Hydrocarbons": "ppm", "Carbon Monoxide": "ppm", "Wind Direction": "°",
+	            "Relative Humidity": "%", "Outdoor Temperature": "°C", "Nitric Oxide": "ppb",
+	            "Wind Speed": "km/h", "Non-methane Hydrocarbons": "ppm", "Nitrogen Dioxide": "ppb",
+	            "Methane": "ppm"
+	        };
+	
+	        const seen = new Set();
+	        const latestByParam = data.filter(row => {
+	            if (seen.has(row.ParameterName)) return false;
+	            seen.add(row.ParameterName);
+	            return true;
+	        });
+	
+	        let html = `<table style="font-size:0.85em;width:100%;"><tr><th>Parameter</th><th>Value</th><th>Unit</th></tr>`;
+	        latestByParam.forEach(row => {
+	            let value = parseFloat(row.Value);
+	            if (["Ozone", "Sulphur Dioxide", "Hydrogen Sulphide", "Nitrogen Dioxide", "Nitric Oxide"].includes(row.ParameterName)) {
+	                value = (value * 1000).toFixed(1);
+	            } else {
+	                value = isNaN(value) ? row.Value : value.toFixed(1);
+	            }
+	            html += `<tr><td>${row.ParameterName}</td><td>${value}</td><td>${unitMap[row.ParameterName] || ""}</td></tr>`;
+	        });
+	        html += `</table>`;
+	        return html;
+	    } catch (e) {
+	        console.error("Fetch error:", e);
+	        return "<b>Error retrieving data.</b>";
+	    }
+	}
+	
+	// Modify findAndDisplayClosest to use this:
+	async function findAndDisplayClosest(lat, lng) {
+	    const aqhiStations = await fetchCombinedAQHIData();
+	    const purpleAirSensors = await fetchPurpleAirData();
+	
+	    let closestAQHIStation = null;
+	    let minAQHIDistance = Infinity;
+	    aqhiStations.forEach(station => {
+	        const distance = getDistance(lat, lng, station.lat, station.lon);
+	        if (distance < minAQHIDistance) {
+	            minAQHIDistance = distance;
+	            closestAQHIStation = station;
+	        }
+	    });
+	
+	    if (closestAQHIStation) {
+	        const html = await fetchRecentStationData(closestAQHIStation.name);
+	        const stationMarker = L.circleMarker([closestAQHIStation.lat, closestAQHIStation.lon], {
+	            radius: 15,
+	            fillColor: getAQHIColor(closestAQHIStation.aqhi),
+	            color: getAQHIColor(closestAQHIStation.aqhi),
+	            weight: 3,
+	            fillOpacity: 0.8
+	        }).addTo(map).bindPopup(
+	            `<strong>${closestAQHIStation.name}</strong><br>AQHI: ${closestAQHIStation.aqhi}<br>Distance: ${(minAQHIDistance / 1000).toFixed(2)} km<br>${html}`
+	        );
+	        existingMarkers.push(stationMarker);
+	    }
+	    // Keep PurpleAir section unchanged
+	}
+	</script>
+
+	
     <script>
         const map = L.map('map').setView([53.535645, -113.47194], 8);
 
