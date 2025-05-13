@@ -129,7 +129,7 @@
 	        const response = await fetch(url);
 	        const json = await response.json();
 	        const data = json.value;
-	
+		    
 	        if (!data.length) return "<b>No recent data found for this station.</b>";
 	
 	        const unitMap = {
@@ -165,38 +165,22 @@
 	        return "<b>Error retrieving data.</b>";
 	    }
 	}
-	
-	// Modify findAndDisplayClosest to use this:
-	async function findAndDisplayClosest(lat, lng) {
-	    const aqhiStations = await fetchCombinedAQHIData();
-	    const purpleAirSensors = await fetchPurpleAirData();
-	
-	    let closestAQHIStation = null;
-	    let minAQHIDistance = Infinity;
-	    aqhiStations.forEach(station => {
-	        const distance = getDistance(lat, lng, station.lat, station.lon);
-	        if (distance < minAQHIDistance) {
-	            minAQHIDistance = distance;
-	            closestAQHIStation = station;
-	        }
-	    });
-	
-	    if (closestAQHIStation) {
-	        const html = await fetchRecentStationData(closestAQHIStation.name);
-	        const stationMarker = L.circleMarker([closestAQHIStation.lat, closestAQHIStation.lon], {
-	            radius: 15,
-	            fillColor: getAQHIColor(closestAQHIStation.aqhi),
-	            color: getAQHIColor(closestAQHIStation.aqhi),
-	            weight: 3,
-	            fillOpacity: 0.8
-	        }).addTo(map).bindPopup(
-	            `<strong>${closestAQHIStation.name}</strong><br>AQHI: ${closestAQHIStation.aqhi}<br>Distance: ${(minAQHIDistance / 1000).toFixed(2)} km<br>${html}`
-	        );
-	        existingMarkers.push(stationMarker);
-	    }
-	    // Keep PurpleAir section unchanged
-	}
-	</script>
+		
+    if (closestAQHIStation) {
+        const { lat: stationLat, lon: stationLon, name, aqhi } = closestAQHIStation;
+        const html = await fetchRecentStationData(name);
+        const stationMarker = L.circleMarker([stationLat, stationLon], {
+            radius: 15,
+            fillColor: getAQHIColor(aqhi),
+            color: getAQHIColor(aqhi),
+            weight: 3,
+            fillOpacity: 0.8,
+        }).addTo(map).bindPopup(
+            `<strong>Closest AQHI Station</strong><br>${name}<br>AQHI: ${aqhi}<br>Distance: ${(minAQHIDistance / 1000).toFixed(2)} km<br><br>${html}`
+        );
+        existingMarkers.push(stationMarker);
+    }
+    </script>
 
 	
     <script>
