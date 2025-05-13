@@ -420,7 +420,7 @@
                     closestPurpleAirSensor = sensor;
                 }
             });
-
+	
             // Display closest AQHI station
 		if (closestAQHIStation) {
 		    const { lat: stationLat, lon: stationLon, name, aqhi } = closestAQHIStation;
@@ -435,7 +435,7 @@
 			).openPopup();
 			
 			existingMarkers.push(stationMarker);
-			
+			}
 			// Fetch extra data in background
 			fetchRecentStationData(name).then(html => {
 			    if (stationMarker.isPopupOpen()) {
