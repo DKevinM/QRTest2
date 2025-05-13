@@ -166,22 +166,8 @@
 	    }
 	}
 
-    if (closestAQHIStation) {
-        const { lat: stationLat, lon: stationLon, name, aqhi } = closestAQHIStation;
-        const html = await fetchRecentStationData(name);
-        const stationMarker = L.circleMarker([stationLat, stationLon], {
-            radius: 15,
-            fillColor: getAQHIColor(aqhi),
-            color: getAQHIColor(aqhi),
-            weight: 3,
-            fillOpacity: 0.8,
-        }).addTo(map).bindPopup(
-            `<strong>Closest AQHI Station</strong><br>${name}<br>AQHI: ${aqhi}<br>Distance: ${(minAQHIDistance / 1000).toFixed(2)} km<br><br>${html}`
-        );
-        existingMarkers.push(stationMarker);
-    }
 
-        const map = L.map('map').setView([53.535645, -113.47194], 8);
+	const map = L.map('map').setView([53.535645, -113.47194], 8);
 
         // Define map layers
         const openStreetMapLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
