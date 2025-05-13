@@ -331,7 +331,7 @@
 
         
 async function fetchRecentStationData(stationName) {
-
+  const safeStationName = stationName.replace(/'/g, "''"); // Escape apostrophes
   const baseURL = "https://data.environment.alberta.ca/EdwServices/aqhi/odata/StationMeasurements";
   const query = `$filter=StationName eq '${stationName}' AND ReadingDate gt ${isoTime}&$orderby=ReadingDate desc&$select=StationName,ParameterName,ReadingDate,Value&$format=json`;
   const url = `${baseURL}?${encodeURI(query)}`;
@@ -341,6 +341,16 @@ async function fetchRecentStationData(stationName) {
     const json = await response.json();
     const data = json.value;
 
+    if (!data.length) return "<b>No recent data found for this station.</b>";
+
+    // Group by most recent value for each parameter
+    const latestByParam = {};
+    data.forEach(row => {
+      if (!latestByParam[row.ParameterName]) {
+        latestByParam[row.ParameterName] = row;
+      }
+    });
+	  
     // Format into HTML table
     let table = `<table style="width:100%;font-size:0.9em;"><thead><tr><th>Parameter</th><th>Value</th><th>Unit</th></tr></thead><tbody>`;
 
