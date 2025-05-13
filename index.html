@@ -395,88 +395,6 @@
             return "#01cbff"; // Low PM2.5
         }
 
-																
-									 
-																						
-																								  
-			
-																											   
-																																															   
-														   
-			
-				   
-												  
-												   
-										
-			
-																							  
-			
-								 
-																								
-																												 
-																								
-																								
-																									  
-								  
-				  
-			
-								 
-																								   
-																												 
-																							   
-																							   
-																									  
-									
-				  
-			
-									 
-																									 
-																								  
-																								 
-																							
-				  
-			
-													  
-																							 
-				  
-			
-										 
-																																					  
-										   
-													
-																										 
-																											
-													  
-						  
-																		
-				   
-		   
-									   
-																							
-						   
-				   
-																				 
-											   
-											 
-																
-																 
-						 
-						 
-
-											
-			
-														   
-							   
-																							
-							   
-				
-																   
-														  
-						   
-												 
-													   
-			   
-			 
 		 
 		
         // Find and display closest sensors and stations
@@ -512,19 +430,21 @@
             });
 
             // Display closest AQHI station
-            if (closestAQHIStation) {
-                const { lat: stationLat, lon: stationLon, name, aqhi } = closestAQHIStation;
-                const stationMarker = L.circleMarker([stationLat, stationLon], {
-                    radius: 15,
-                    fillColor: getAQHIColor(aqhi),
-                    color: getAQHIColor(aqhi),
-                    weight: 3,
-                    fillOpacity: 0.8,
-                }).addTo(map).bindPopup(
-                    `<strong>Closest AQHI Station</strong><br>${name}<br>AQHI: ${aqhi}<br>Distance: ${(minAQHIDistance / 1000).toFixed(2)} km`
-                );
-                existingMarkers.push(stationMarker);
-            }
+		if (closestAQHIStation) {
+		    const { lat: stationLat, lon: stationLon, name, aqhi } = closestAQHIStation;
+		    const html = await fetchRecentStationData(name);
+		
+		    const stationMarker = L.circleMarker([stationLat, stationLon], {
+		        radius: 15,
+		        fillColor: getAQHIColor(aqhi),
+		        color: getAQHIColor(aqhi),
+		        weight: 3,
+		        fillOpacity: 0.8,
+		    }).addTo(map).bindPopup(
+		        `<strong>Closest AQHI Station</strong><br>${name}<br>AQHI: ${aqhi}<br>Distance: ${(minAQHIDistance / 1000).toFixed(2)} km<br><br>${html}`
+		    );
+		    existingMarkers.push(stationMarker);
+		}
 
             // Display closest PurpleAir sensor
             if (closestPurpleAirSensor) {
