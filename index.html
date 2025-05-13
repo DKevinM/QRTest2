@@ -142,11 +142,20 @@
 	        };
 	
 	        const seen = new Set();
-	        const latestByParam = data.filter(row => {
-	            if (seen.has(row.ParameterName)) return false;
-	            seen.add(row.ParameterName);
-	            return true;
-	        });
+		const allowedParams = [
+		    "Nitrogen Dioxide",
+		    "Ozone",
+		    "Sulphur Dioxide",
+		    "Hydrogen Sulphide",
+		    "Fine Particulate Matter"
+		];
+		
+		const latestByParam = data.filter(row => {
+		    if (!allowedParams.includes(row.ParameterName)) return false;
+		    if (seen.has(row.ParameterName)) return false;
+		    seen.add(row.ParameterName);
+		    return true;
+		});
 	
 	        let html = `<table style="font-size:0.85em;width:100%;"><tr><th>Parameter</th><th>Value</th><th>Unit</th></tr>`;
 	        latestByParam.forEach(row => {
