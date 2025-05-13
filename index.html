@@ -424,19 +424,26 @@
             // Display closest AQHI station
 		if (closestAQHIStation) {
 		    const { lat: stationLat, lon: stationLon, name, aqhi } = closestAQHIStation;
-		    const html = await fetchRecentStationData(name);
-		
-		    const stationMarker = L.circleMarker([stationLat, stationLon], {
-		        radius: 15,
-		        fillColor: getAQHIColor(aqhi),
-		        color: getAQHIColor(aqhi),
-		        weight: 3,
-		        fillOpacity: 0.8,
-		    }).addTo(map).bindPopup(
-		        `<strong>Closest AQHI Station</strong><br>${name}<br>AQHI: ${aqhi}<br>Distance: ${(minAQHIDistance / 1000).toFixed(2)} km<br><br>${html}`
-		    );
-		    existingMarkers.push(stationMarker);
-		}
+			const stationMarker = L.circleMarker([stationLat, stationLon], {
+			    radius: 15,
+			    fillColor: getAQHIColor(aqhi),
+			    color: getAQHIColor(aqhi),
+			    weight: 3,
+			    fillOpacity: 0.8,
+			}).addTo(map).bindPopup(
+			    `<strong>Closest AQHI Station</strong><br>${name}<br>AQHI: ${aqhi}<br>Distance: ${(minAQHIDistance / 1000).toFixed(2)} km<br><em>Loading detailed data...</em>`
+			).openPopup();
+			
+			existingMarkers.push(stationMarker);
+			
+			// Fetch extra data in background
+			fetchRecentStationData(name).then(html => {
+			    if (stationMarker.isPopupOpen()) {
+				stationMarker.setPopupContent(
+				    `<strong>Closest AQHI Station</strong><br>${name}<br>AQHI: ${aqhi}<br>Distance: ${(minAQHIDistance / 1000).toFixed(2)} km<br><br>${html}`
+				);
+			    }
+			});
 
             // Display closest PurpleAir sensor
             if (closestPurpleAirSensor) {
