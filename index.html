@@ -418,6 +418,29 @@ async function fetchRecentStationData(stationName) {
 											   
             });
 
+		if (closestAQHIStation) {
+		  const { lat: stationLat, lon: stationLon, name, aqhi } = closestAQHIStation;
+		
+		  const stationMarker = L.circleMarker([stationLat, stationLon], {
+		    radius: 15,
+		    fillColor: getAQHIColor(aqhi),
+		    color: getAQHIColor(aqhi),
+		    weight: 3,
+		    fillOpacity: 0.8,
+		  }).addTo(map);
+		
+		  stationMarker.bindPopup(`<strong>${name}</strong><br>Loading recent data...`);
+		  existingMarkers.push(stationMarker);
+		
+		  // On popup open, fetch and update the content
+		  stationMarker.on('popupopen', async () => {
+		    const html = await fetchRecentStationData(name);
+		    stationMarker.setPopupContent(`<strong>${name}</strong><br>${html}`);
+		  });
+		}
+
+
+		
             // Find closest PurpleAir sensor
             let closestPurpleAirSensor = null;
             let minPurpleAirDistance = Infinity;
