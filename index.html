@@ -147,6 +147,7 @@
 		    "Ozone",
 		    "Sulphur Dioxide",
 		    "Hydrogen Sulphide",
+		    "Total Reduced Sulphur",
 		    "Fine Particulate Matter"
 		];
 		
@@ -160,7 +161,7 @@
 	        let html = `<table style="font-size:0.85em;width:100%;"><tr><th>Parameter</th><th>Value</th><th>Unit</th></tr>`;
 	        latestByParam.forEach(row => {
 	            let value = parseFloat(row.Value);
-	            if (["Ozone", "Sulphur Dioxide", "Hydrogen Sulphide", "Nitrogen Dioxide", "Nitric Oxide"].includes(row.ParameterName)) {
+	            if (["Ozone", "Sulphur Dioxide", "Total Reduced Sulphur", "Hydrogen Sulphide", "Nitrogen Dioxide", "Nitric Oxide"].includes(row.ParameterName)) {
 	                value = (value * 1000).toFixed(1);
 	            } else {
 	                value = isNaN(value) ? row.Value : value.toFixed(1);
