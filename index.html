@@ -165,7 +165,7 @@
 	        return "<b>Error retrieving data.</b>";
 	    }
 	}
-		
+
     if (closestAQHIStation) {
         const { lat: stationLat, lon: stationLon, name, aqhi } = closestAQHIStation;
         const html = await fetchRecentStationData(name);
@@ -180,10 +180,7 @@
         );
         existingMarkers.push(stationMarker);
     }
-    </script>
 
-	
-    <script>
         const map = L.map('map').setView([53.535645, -113.47194], 8);
 
         // Define map layers
