@@ -87,10 +87,10 @@
         }
         .wind-arrow {
               display: inline-block;
-              transform: rotate(180deg); /* default */
+              transform: rotate(0deg); /* default */
               transition: transform 0.3s ease;
-              width: 30px;
-              height: 30px;
+              width: 40px;
+              height: 40px;
               vertical-align: middle;
               margin-left: 5px;
         }
@@ -574,9 +574,9 @@
                       ["Wind Gusts", `${weather.wind_gusts} km/h`],
                       ["Wind Direction", `
                               ${weather.wind_direction}° (from ${getWindDirectionLabel(weather.wind_direction)})
-                              <span class="wind-arrow" style="transform: rotate(${weather.wind_direction}deg);">↑</span>
+                              <span class="wind-arrow" style="display:inline-block; transform: rotate(${(weather.wind_direction + 180) % 360}deg);">↑</span>
                         `]
-
+			    
                     ];
                 
                         const currentTable = rows.map(row => `<tr><td><strong>${row[0]}</strong></td><td>${row[1]}</td></tr>`).join("");
